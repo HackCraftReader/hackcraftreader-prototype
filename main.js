@@ -1,7 +1,6 @@
-import Exponent, {Font} from 'exponent';
+import Exponent from 'exponent';
 import React from 'react';
 import {
-  AppRegistry,
   Platform,
   StatusBar,
   StyleSheet,
@@ -17,6 +16,7 @@ import {
 
 import Router from './navigation/Router';
 import cacheAssetsAsync from './utilities/cacheAssetsAsync';
+import Colors from './constants/Colors';
 
 class AppContainer extends React.Component {
   state = {
@@ -39,7 +39,7 @@ class AppContainer extends React.Component {
           {'space-mono': require('./assets/fonts/SpaceMono-Regular.ttf')},
         ],
       });
-    } catch(e) {
+    } catch (e) {
       console.warn(
         'There was an error caching assets (see: main.js), perhaps due to a ' +
         'network timeout, so we skipped caching. Reload the app to try again.'
@@ -56,12 +56,12 @@ class AppContainer extends React.Component {
         <View style={styles.container}>
           <NavigationProvider router={Router}>
             <StackNavigation
-             id="root"
-             initialRoute={Router.getRoute('rootNavigation')}
+              id='root'
+              initialRoute={Router.getRoute('rootNavigation')}
             />
           </NavigationProvider>
 
-          {Platform.OS === 'ios' && <StatusBar barStyle="light-content" />}
+          {Platform.OS === 'ios' && <StatusBar barStyle='light-content' />}
           {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}
         </View>
       );

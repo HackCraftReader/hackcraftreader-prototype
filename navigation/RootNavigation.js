@@ -16,6 +16,7 @@ import {
   FontAwesome,
 } from '@exponent/vector-icons';
 
+import Router from '../navigation/Router';
 import Alerts from '../constants/Alerts';
 import Colors from '../constants/Colors';
 import createCraftIcon from '../components/CraftIcon';
@@ -32,66 +33,67 @@ export default class RootNavigation extends React.Component {
 
   render() {
     return (
+
       <TabNavigation
         tabBarHeight={44}
-        initialTab="top">
+        initialTab='top'>
 
         <TabNavigationItem
-          id="top"
-          title="Top"
-          renderTitle={this._renderTitle.bind(this)}
+          id='top'
+          title='Top'
+          renderTitle={this._renderTitle}
           renderIcon={isSelected => this._renderCraftIcon('hcr-numlist', isSelected, 'hcr-numlist-filled')}>
-          <StackNavigation initialRoute="top" />
+            <StackNavigation initialRoute={Router.getRoute('top', {'name': 'Top', 'filtered': false})} />
         </TabNavigationItem>
 
         <TabNavigationItem
-          id="byday"
-          title="By Day"
-          renderTitle={this._renderTitle.bind(this)}
+          id='byday'
+          title='By Day'
+          renderTitle={this._renderTitle}
           renderIcon={isSelected => this._renderCraftIcon('hcr-weekly', isSelected, 'hcr-weekly-filled')}>
-          <StackNavigation initialRoute="byday" />
+          <StackNavigation initialRoute={Router.getRoute('byday', {'name': 'By Day', 'filtered': false})} />
         </TabNavigationItem>
 
         <TabNavigationItem
-          id="log"
-          title="Log"
-          renderTitle={this._renderTitle.bind(this)}
+          id='log'
+          title='Log'
+          renderTitle={this._renderTitle}
           renderIcon={isSelected => this._renderCraftIcon('hcr-history', isSelected)}>
-          <StackNavigation initialRoute="log" />
+          <StackNavigation initialRoute='log' />
         </TabNavigationItem>
 
         <TabNavigationItem
-          id="notifications"
-          title="Notifications"
-          renderTitle={this._renderTitle.bind(this)}
+          id='notifications'
+          title='Notifications'
+          renderTitle={this._renderTitle}
           renderIcon={isSelected => this._renderFontAwesomeIcon('bell-o', isSelected, 'bell')}>
-          <StackNavigation initialRoute="notifications" />
+          <StackNavigation initialRoute='notifications' />
         </TabNavigationItem>
 
         <TabNavigationItem
-          id="more"
-          title="More"
-          renderTitle={this._renderTitle.bind(this)}
+          id='more'
+          title='More'
+          renderTitle={this._renderTitle}
           renderIcon={isSelected => this._renderFontAwesomeIcon('sliders', isSelected)}>
-          <StackNavigation initialRoute="more" />
+          <StackNavigation initialRoute='more' />
         </TabNavigationItem>
       </TabNavigation>
     );
   }
 
-  _renderCraftIcon(name, isSelected, filledName=name) {
+  _renderCraftIcon(name, isSelected, filledName = name) {
     const CraftIcon = createCraftIcon();
     return (
       <CraftIcon
         name={isSelected ? filledName : name}
         size={28}
         color={isSelected ? Colors.tabIconSelected : Colors.tabIconDefault}
-        style={{marginVertical:-2, backgroundColor: 'transparent'}}
+        style={{marginVertical: -2, backgroundColor: 'transparent'}}
       />
     );
   }
 
-  _renderFontAwesomeIcon(name, isSelected, filledName=name) {
+  _renderFontAwesomeIcon(name, isSelected, filledName = name) {
     return (
       <FontAwesome
         name={isSelected ? filledName : name}
@@ -101,17 +103,15 @@ export default class RootNavigation extends React.Component {
     );
   }
 
-  _renderTitle(isSelected, title, index) {
-    console.log("here", title);
+  _renderTitle = (isSelected, title, index)  => {
     return (
       <Text
         style={{color: isSelected ? Colors.tabIconSelected : Colors.tabIconDefault, fontSize: 9}}
       >
-      {title}
+        {title}
       </Text>
     );
   }
-
 
   _registerForPushNotifications() {
     // Send our push token over to our backend so we can receive notifications

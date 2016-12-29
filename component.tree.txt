@@ -1,0 +1,7 @@
+
+- nav provider
+  - Stack id=root (good place to push popup dialogs)
+    - TabNavigation (might need an id to switch)
+       - Stack Navigation id = byroutename
+       
+       

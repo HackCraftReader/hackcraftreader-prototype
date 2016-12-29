@@ -33,7 +33,6 @@ export default class HomeScreen extends React.Component {
             />
           </View>
 
-
           <View style={styles.getStartedContainer}>
             {this._maybeRenderDevelopmentModeWarning()}
 
@@ -77,7 +76,8 @@ export default class HomeScreen extends React.Component {
   }
 
   _maybeRenderDevelopmentModeWarning() {
-    if (__DEV__) {
+    if (
+      __DEV__) {
       const learnMoreButton = (
         <Text onPress={this._handleLearnMorePress} style={styles.helpLinkText}>
           Learn more
