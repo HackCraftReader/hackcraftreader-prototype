@@ -5,9 +5,6 @@ import Colors from '../constants/Colors';
 import extractDomain from '../utilities/extractDomain';
 
 export default class ArticleRow extends React.Component {
-  constructor(props) {
-    super(props);
-  }
   render() {
     const article = this.props.article;
     const CraftIcon = createCraftIcon();

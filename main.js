@@ -16,7 +16,6 @@ import {
 
 import Router from './navigation/Router';
 import cacheAssetsAsync from './utilities/cacheAssetsAsync';
-import Colors from './constants/Colors';
 
 class AppContainer extends React.Component {
   state = {

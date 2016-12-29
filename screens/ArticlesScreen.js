@@ -185,6 +185,8 @@ export default class ArticlesScreen extends React.Component {
         feedItems={this.state.feedItems}
         groupCountTitle={this.state.groupCountTitle}
         groupCountItems={this.state.groupCountItems}
+        updateFeedItems={this._updateFeedItems}
+        updateGroupCountItems={this._updateGroupCountItems}
       >
         <SwipeListView
           style={styles.container}
@@ -219,6 +221,16 @@ export default class ArticlesScreen extends React.Component {
   _setFiltered = filtered => {
     console.log('filtered set!');
     this.props.navigator.updateCurrentRouteParams({filtered: filtered});
+  }
+
+  _updateFeedItems = newItems => {
+    console.log('update feed items');
+    this.setState({feedItems: newItems});
+  }
+
+  _updateGroupCountItems = newItems => {
+    console.log('update group items');
+    this.setState({groupCountItems: newItems});
   }
 }
 

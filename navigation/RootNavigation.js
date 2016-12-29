@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  StyleSheet,
-  View,
   Text,
 } from 'react-native';
 import {
@@ -43,7 +41,7 @@ export default class RootNavigation extends React.Component {
           title='Top'
           renderTitle={this._renderTitle}
           renderIcon={isSelected => this._renderCraftIcon('hcr-numlist', isSelected, 'hcr-numlist-filled')}>
-            <StackNavigation initialRoute={Router.getRoute('top', {'name': 'Top', 'filtered': false})} />
+          <StackNavigation initialRoute={Router.getRoute('top', {'name': 'Top', 'filtered': false})} />
         </TabNavigationItem>
 
         <TabNavigationItem
@@ -103,7 +101,7 @@ export default class RootNavigation extends React.Component {
     );
   }
 
-  _renderTitle = (isSelected, title, index)  => {
+  _renderTitle = (isSelected, title, index) => {
     return (
       <Text
         style={{color: isSelected ? Colors.tabIconSelected : Colors.tabIconDefault, fontSize: 9}}
@@ -131,13 +129,3 @@ export default class RootNavigation extends React.Component {
     );
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  selectedTab: {
-    color: Colors.tabIconSelected,
-  },
-});

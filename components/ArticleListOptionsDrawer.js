@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ScrollView,
   StyleSheet,
   TouchableWithoutFeedback,
   Text,
@@ -25,6 +24,7 @@ export default class ArticleListOptionsDrawer extends React.Component {
         ref={component => { this._component = component; }}
         onDrawerClose={() => { this.setState({isOpen: false}); }}
         onDrawerOpen={() => { this.setState({isOpen: true}); }}
+        drawerBackgroundColor={'#FFF'}
         drawerWidth={280}
         drawerPosition={DrawerLayout.positions[position]}
         renderNavigationView={this._renderNavigationView}>
@@ -43,7 +43,7 @@ export default class ArticleListOptionsDrawer extends React.Component {
 
   _renderNavigationView = () => {
     const feedItems = this.props.feedItems.map((item, idx) =>
-      <TouchableWithoutFeedback key={idx} onPress={() => this._handlePressFeed(item)}>
+      <TouchableWithoutFeedback key={idx} onPress={() => this._handlePressFeed(item, idx)}>
         <View style={item.selected && styles.feedSelectedItem}>
           <Text style={[styles.feedText, item.selected && styles.feedSelectedText]}>
             <FontAwesome
@@ -58,8 +58,9 @@ export default class ArticleListOptionsDrawer extends React.Component {
     const groupCounts = this.props.groupCountItems.map((item, idx) =>
       <TouchableWithoutFeedback key={idx} onPress={() => this._handlePressRadio(item, idx)}>
         <View style={[
-          item.selected ? styles.radioSelectedItem : styles.radioItem,
-          idx < this.props.groupCountItems.length - 1 ? styles.radioItemInner : {}
+          styles.radioItem,
+          item.selected && styles.radioSelectedItem,
+          (idx < this.props.groupCountItems.length - 1) && styles.radioItemInner
         ]}>
           <Text style={styles.radioText}>{item.value}</Text>
         </View>
@@ -71,23 +72,28 @@ export default class ArticleListOptionsDrawer extends React.Component {
         <View style={styles.feedItemsContainer}>
           {feedItems}
         </View>
-        <Text style={[styles.sectionText, {marginTop: 30}]}>{this.props.groupCountTitle}</Text>
+        <Text style={styles.sectionText}>{this.props.groupCountTitle}</Text>
         <View style={styles.radioContainer}>
           { groupCounts }
         </View>
-        <View style={{flex: 1}} />
       </View>
     );
   }
 
   _handlePressRadio = (item, idx) => {
     this._component.closeDrawer();
-    console.log('radio', item, idx);
+    var newItems = this.props.groupCountItems.map(item => ({...item, selected: false}));
+    item.selected = !item.selected;
+    newItems[idx] = item;
+    this.props.updateGroupCountItems(newItems);
   }
 
-  _handlePressFeed = (item) => {
+  _handlePressFeed = (item, idx) => {
     this._component.closeDrawer();
-    console.log('feed', item);
+    var newItems = this.props.feedItems.map(item => ({...item, selected: false}));
+    item.selected = !item.selected;
+    newItems[idx] = item;
+    this.props.updateFeedItems(newItems);
   }
 }
 
@@ -102,12 +108,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.optionsHeaderBackground,
   },
   sectionText: {
+    marginLeft: 1,
     marginBottom: 8,
     color: Colors.optionsSectionTitle,
     fontSize: 12,
   },
   feedItemsContainer: {
-    paddingBottom: 5
+    marginBottom: 35
   },
   feedSelectedItem: {
     backgroundColor: Colors.optionsHighlightBackground,
@@ -124,28 +131,22 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   radioContainer: {
-    overflow: 'hidden',
     height: 30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 0,
 
     borderColor: Colors.optionsRadioBorder,
-    borderRadius: 3,
     borderWidth: StyleSheet.hairlineWidth,
-  },
-  radioSelectedItem: {
-    height: 30,
-    flex: 1,
-    backgroundColor: Colors.optionsHighlightBackground,
-    justifyContent: 'center',
-    margin: 0,
+    borderRadius: 3,
   },
   radioItem: {
     height: 30,
     justifyContent: 'center',
     flex: 1,
+  },
+  radioSelectedItem: {
+    backgroundColor: Colors.optionsHighlightBackground,
   },
   radioItemInner: {
     borderRightColor: Colors.optionsRadioBorder,
