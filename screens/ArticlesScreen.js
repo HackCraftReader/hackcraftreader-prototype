@@ -15,7 +15,10 @@ import {
 import moment from 'moment/src/moment'; // Moment ES6 workaround
 import Colors from '../constants/Colors';
 
+import Router from '../navigation/Router';
+
 import ArticleRow from '../components/ArticleRow';
+import ArticleSection from '../components/ArticleSection';
 import ArticleListOptionsDrawer from '../components/ArticleListOptionsDrawer';
 
 import {
@@ -111,7 +114,7 @@ const TOP_GROUP_COUNT = {
     {value: 5, selected: true},
     {value: 10, selected: false},
     {value: 15, selected: false},
-    {value: 20, selected: false},
+    {value: 30, selected: false},
   ]
 };
 
@@ -119,9 +122,9 @@ const BYDAY_GROUP_COUNT = {
   title: 'ITEMS PER DAY',
   items: [
     {value: 5, selected: true},
-    {value: 10, selected: false},
-    {value: 20, selected: false},
-    {value: 50, selected: false},
+    {value: 15, selected: false},
+    {value: 30, selected: false},
+    {value: 60, selected: false},
   ]
 };
 
@@ -146,6 +149,7 @@ export default class ArticlesScreen extends React.Component {
     this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
     var stories = ArticlesScreen.staticTopStories;
     stories.forEach((story, index) => {
+      story.source = 'HN';
       story.rank = index + 1;
       story.when = moment(story.created_at_i * 1000).from(Number(ArticlesScreen.staticStoriesMeta.now_i * 1000));
     });
@@ -178,6 +182,8 @@ export default class ArticlesScreen extends React.Component {
   }
 
   render() {
+    const groupSize = this.state.groupCountItems.filter(item => item.selected)[0].value;
+    const groupedStories = this._groupStories(this.state.stories, groupSize);
     return (
       <ArticleListOptionsDrawer
         ref={(optionsDrawer) => { this._optionsDrawer = optionsDrawer; }}
@@ -191,8 +197,20 @@ export default class ArticlesScreen extends React.Component {
         <SwipeListView
           style={styles.container}
           contentContainerStyle={this.props.route.getContentContainerStyle()}
-          dataSource={this.ds.cloneWithRows(this.state.stories)}
-          renderRow={data => (<ArticleRow article={data} />)}
+          dataSource={this.ds.cloneWithRows(groupedStories)}
+          renderRow={data =>
+            (data.isSection
+            ? <ArticleSection section={data} checkAll={this._checkAll} />
+            : <ArticleRow
+              article={data}
+              isLast={data.isLast}
+              upvote={this._upvoteArticle}
+              check={this._checkArticle}
+              craft={this._craftArticle}
+              openArticle={this._openArticle}
+              openComments={this._openComments}
+              />
+            )}
           refreshControl={
             <RefreshControl
               refreshing={this.state.isRefreshing}
@@ -231,6 +249,61 @@ export default class ArticlesScreen extends React.Component {
   _updateGroupCountItems = newItems => {
     console.log('update group items');
     this.setState({groupCountItems: newItems});
+  }
+
+  _checkAll = ({rangeStart, rangeEnd}) => {
+    console.log(rangeStart, rangeEnd);
+    alert('check all');
+  }
+
+  _upvoteArticle = article => {
+    console.log(Object.keys(article));
+    console.log(Object.keys(this));
+    alert('upvote');
+  }
+
+  _checkArticle = article => {
+    console.log(Object.keys(article));
+    console.log(Object.keys(this));
+    alert('check');
+  }
+
+  _craftArticle = article => {
+    console.log(Object.keys(article));
+    console.log(Object.keys(this));
+    alert('check');
+  }
+
+  _openArticle = article => {
+    console.log(Object.keys(article));
+    console.log(Object.keys(this));
+    alert('article');
+  }
+
+  _openComments = article => {
+    const rootNav = this.props.navigation.getNavigator('root');
+    rootNav.push(Router.getRoute('articleNavigation', {'screen': 'comments', 'article': article}));
+  }
+
+  _groupStories(stories, groupSize) {
+    var title = 'TOP';
+    // if(!this.isTop) - compute by day title
+    var groupedStories = [];
+    stories.forEach((story, idx) => {
+      if (idx % groupSize === 0) {
+        if (idx > 0) groupedStories[groupedStories.length - 1].isLast = true;
+        groupedStories.push(
+          { 'isSection': true,
+            'title': `${title} ${idx + 1}-${idx + groupSize}`,
+            'iconName': 'y-combinator-square',
+            'rangeStart': idx,
+            'rangeEnd': idx + groupSize
+          });
+      }
+      groupedStories.push(story);
+    });
+    if (groupedStories.length > 0) groupedStories[groupedStories.length - 1].isLast = true;
+    return groupedStories;
   }
 }
 

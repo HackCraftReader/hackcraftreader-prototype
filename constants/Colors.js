@@ -3,6 +3,7 @@ const tintColor = '#2f95dc';
 export default {
   scrollBackground: '#FFFFFF',
   hairlineBorder: '#C8C7CC',
+  sectionBorder: '#D5D5D8',
   primaryTitle: '#414141',
   secondaryTitle: '#95989A',
   tintColor,
@@ -15,11 +16,16 @@ export default {
   warningText: '#666804',
   noticeBackground: tintColor,
   noticeText: '#fff',
-
   mostlyWhite: '#F1F1F1',
+
+  screenBase: '#F2F2F2',
+  sectionText: '#808080',
 
   hcrBackground: '#4FD2C2',
   hcrButtonBackground: '#42AC9F',
+
+  backgroundHackerNews: '#FF6602',
+  backgroundReddit: '#5F99CF',
 
   optionsBackround: '#4D394B',
   optionsHeaderBackground: '#413040',

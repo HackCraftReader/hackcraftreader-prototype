@@ -4,8 +4,8 @@ import fontelloConfig from '../assets/fonts/hcr-config.json';
 
 var CraftIcon = null;
 export default function createCraftIcon(){
-    if(!CraftIcon) {
-        CraftIcon = createIconSetFromFontello(fontelloConfig, 'hcr');
-    }
-    return CraftIcon;
+  if (!CraftIcon) {
+    CraftIcon = createIconSetFromFontello(fontelloConfig, 'hcr');
+  }
+  return CraftIcon;
 }
