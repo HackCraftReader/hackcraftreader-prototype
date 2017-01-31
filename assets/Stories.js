@@ -7,7 +7,8 @@ var HNTopStories = require('../assets/hackernews/topStories.json');
 
 function countComments(comments) {
   if (!comments.children) { return 0; }
-  return comments.children.length + comments.children.reduce(countComments, 0);
+  return comments.children.length +
+         comments.children.map(countComments).reduce((a, b) => a + b, 0);
 }
 
 HNTopStories.forEach((story, index) => {
