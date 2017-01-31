@@ -1,14 +1,13 @@
 import React from 'react';
 import {Text, StyleSheet, TouchableOpacity, View} from 'react-native';
 import Colors from '../constants/Colors';
-import createCraftIcon from '../components/CraftIcon';
+import CraftIcon from '../components/CraftIcon';
 import { FontAwesome } from '@exponent/vector-icons';
 
 export default class ArticleSection extends React.Component {
   render() {
     const iconName = this.props.section.iconName;
     const title = this.props.section.title;
-    const CraftIcon = createCraftIcon();
     return (
       <View style={styles.container}>
         <Text style={styles.sectionText}>

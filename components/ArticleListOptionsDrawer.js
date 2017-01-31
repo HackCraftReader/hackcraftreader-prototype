@@ -4,6 +4,7 @@ import {
   TouchableWithoutFeedback,
   Text,
   View,
+  InteractionManager,
 } from 'react-native';
 import { FontAwesome } from '@exponent/vector-icons';
 
@@ -81,19 +82,25 @@ export default class ArticleListOptionsDrawer extends React.Component {
   }
 
   _handlePressRadio = (item, idx) => {
-    this._component.closeDrawer();
     var newItems = this.props.groupCountItems.map(item => ({...item, selected: false}));
     item.selected = !item.selected;
     newItems[idx] = item;
-    this.props.updateGroupCountItems(newItems);
+
+    this._component.closeDrawer();
+    InteractionManager.runAfterInteractions(() => {
+      this.props.updateGroupCountItems(newItems);
+    });
   }
 
   _handlePressFeed = (item, idx) => {
-    this._component.closeDrawer();
     var newItems = this.props.feedItems.map(item => ({...item, selected: false}));
     item.selected = !item.selected;
     newItems[idx] = item;
-    this.props.updateFeedItems(newItems);
+
+    this._component.closeDrawer();
+    InteractionManager.runAfterInteractions(() => {
+      this.props.updateFeedItems(newItems);
+    });
   }
 }
 

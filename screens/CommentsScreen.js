@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,132 +8,129 @@ import {
   View,
 } from 'react-native';
 
-// for ios-share-outline
-import {
-  Ionicons,
-} from '@exponent/vector-icons';
-
 import moment from 'moment/src/moment'; // Moment ES6 workaround
 import Colors from '../constants/Colors';
+import cheerio from 'cheerio-without-node-native';
 
-import ArticleRow from '../components/ArticleRow';
-import ArticleSection from '../components/ArticleSection';
-import ArticleListOptionsDrawer from '../components/ArticleListOptionsDrawer';
+import {ArticleHeader} from '../components/ArticleComponents';
 
-import {
-  SwipeListView
-} from 'react-native-swipe-list-view';
+import {StoriesMeta} from '../assets/Stories';
 
-import MaterialSwitch from 'react-native-material-switch';
+import { FontAwesome } from '@exponent/vector-icons';
+import MiscIcon from '../components/MiscIcon';
+import CraftIcon from '../components/CraftIcon';
 
-const LEFT_BUTTON_HIT_SLOP = { top: 0, bottom: 0, left: 0, right: 30 };
+import NavTabBar, {
+  NavBackButton,
+  NavArticleButton,
+  NavActionButton,
+  NavCreateButton,
+  NavCheckButton,
+} from '../components/NavTabBar';
 
-const OptionsMenuButton = ({ config: { eventEmitter } }) => (
-  <TouchableOpacity
-    onPress={() => { eventEmitter.emit('toggleOptions'); }}
-    hitSlop={LEFT_BUTTON_HIT_SLOP}
-    style={buttonStyles.buttonContainer}
-  >
-    <Ionicons
-      name='md-menu'
-      size={24}
-      color='white'
-      style={buttonStyles.button}
-    />
-  </TouchableOpacity>
-);
-
-class FilterAndSearchButton extends Component {
-  render() {
-    const filtered = this.props.params.filtered;
-    const checkedColor = filtered ? Colors.hcrButtonBackground : 'white';
-
-    const SwitchButton = (
-      <Ionicons
-        name='md-checkmark'
-        size={14}
-        color={checkedColor}
-        style={{backgroundColor: 'transparent'}}
-      />);
-
-    return (
-      <View style={styles.filterSwitchContainer}>
-        <MaterialSwitch
-          value={filtered}
-          onValueChange={this._toggleFiltered}
-          inactiveButtonColor={Colors.hcrButtonBackground}
-          activeButtonColor={Colors.mostlyWhite}
-          buttonRadius={10}
-          switchWidth={30}
-          switchHeight={14}
-          width={35}
-          buttonContent={SwitchButton}
-        />
-        <TouchableOpacity
-          onPress={this._toggleSearch}
-          width={24}
-          style={buttonStyles.buttonContainer}
-        >
-          <Ionicons
-            name='ios-search'
-            size={24}
-            color='white'
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  _toggleFiltered = (state) => {
-    this.props.emitter.emit('setFiltered', state);
-  }
-
-  _toggleSearch = () => {
-    console.log('toggle search');
+function iconForSource(source) {
+  if (source === 'HN') {
+    return 'y-combinator-square';
+  } else if (source === 'Reddit') {
+    return 'reddit-square';
+  } else {
+    return 'rss-square';
   }
 }
 
-const hcrNavigationBarRouteConfig = {
-  title(params) { return params.name; },
-  backgroundColor: Colors.hcrBackground,
-  tintColor: 'white',
-  height: 64,
-};
+function makeCommentTree(comments, level = 0) {
+  var flat = [];
+  comments.map(c => {
+    if (c.type === 'comment') {
+      const {id, created_at_i, author, text, parent_id} = c;
+      const when = moment(created_at_i * 1000).from(Number(StoriesMeta.now_i * 1000));
+      var $ = cheerio.load(text);
+      var comment = [];
+      $.root().children().each(function (i, el) {
+        comment.push(
+          <View key={i} style={{paddingTop: 8}}>
+            <Text style={styles.commentParagraph}>{$(el).text()}</Text>
+          </View>
+        );
+      });
+      flat.push({id, level, author, when, comment, parent_id});
+      flat.push(...makeCommentTree(c.children, level + 1));
+    }
+  });
+  return flat;
+}
 
-const FEED_LIST_ITEMS = [
-  {name: 'Hacker News', iconName: 'y-combinator-square', selected: true},
-  {name: 'Programming Reddit', iconName: 'reddit-square', selected: false},
-  {name: 'All Collated', iconName: 'renren', selected: false},
-  {name: 'All Sequential', iconName: 'list-ul', selected: false},
-];
-
-const TOP_GROUP_COUNT = {
-  title: 'GROUP SIZE',
-  items: [
-    {value: 5, selected: true},
-    {value: 10, selected: false},
-    {value: 15, selected: false},
-    {value: 30, selected: false},
-  ]
-};
-
-const BYDAY_GROUP_COUNT = {
-  title: 'ITEMS PER DAY',
-  items: [
-    {value: 5, selected: true},
-    {value: 15, selected: false},
-    {value: 30, selected: false},
-    {value: 60, selected: false},
-  ]
-};
-
-function colorForSource(source) {
-  if (source === 'HN') {
-    return Colors.backgroundHackerNews;
-  } else if (source === 'Reddit') {
-    return Colors.backgroundReddit;
+function Comment(props) {
+  const authorStyle = props.author === 'hackcrafter'
+                    ? styles.authorMe
+                    : styles.author;
+  let commentVar = (
+    <View
+      key={props.id}
+      style={[styles.commentContainer,
+              {paddingLeft: (props.level + 1) * 15}]}
+    >
+      <View style={styles.top}>
+        <Text style={authorStyle}>
+          {props.author}
+        </Text>
+        <Text style={styles.secondary}>{props.when}</Text>
+      </View>
+      <View>
+        {props.comment}
+      </View>
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={{flexDirection: 'row'}}
+          onPress={() => console.log('reply')}
+        >
+          <FontAwesome
+            name='reply'
+            size={11}
+            color={Colors.secondaryTitle}
+            style={{marginTop: 4}}
+          />
+          <Text style={styles.actions}> reply</Text>
+        </TouchableOpacity>
+        <Text style={styles.actions}> • </Text>
+        <TouchableOpacity
+          style={{flexDirection: 'row'}}
+          onPress={() => console.log('craft')}
+        >
+          <CraftIcon
+            name='hcr-action-filled'
+            size={14}
+            color={Colors.secondaryTitle}
+            style={{marginTop: 2}}
+          />
+          <Text style={styles.actions}> craft</Text>
+        </TouchableOpacity>
+        <Text style={styles.actions}> • </Text>
+        <TouchableOpacity
+          style={{flexDirection: 'row'}}
+          onPress={() => console.log('upvote')}
+        >
+          <CraftIcon
+            name='hcr-upvote-filled'
+            size={14}
+            color={Colors.secondaryTitle}
+            style={{marginTop: 2}}
+          />
+          <Text style={styles.actions}> upvote</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+  if (props.isLast) {
+    return (
+      <View>
+        {commentVar}
+        <View style={{paddingTop: 10, backgroundColor: 'white'}} />
+        <View style={{marginTop: 45}} />
+      </View>
+    );
   } else {
-    return Colors.hcrBackground;
+    return commentVar;
   }
 }
 
@@ -141,17 +138,20 @@ export default class CommentsScreen extends React.Component {
   static route = {
     navigationBar: {
       visible: false,
-      // This sets the background color for the status bar
-      backgroundColor: (params) => colorForSource(this.params.article.source)
     }
   };
 
   constructor(props) {
     super(props);
     this.article = this.props.route.params.article;
-    this.comments = this.article.children;
+    this.comments = makeCommentTree(this.article.children);
+    this.comments.unshift({article: this.article}); // header
+    this.comments[this.comments.length - 1].isLast = true; // footer
+
+    const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1.id !== r2.id});
     this.state = {
       isRefreshing: false,
+      dataSource: ds.cloneWithRows(this.comments)
     };
   }
 
@@ -162,10 +162,82 @@ export default class CommentsScreen extends React.Component {
     }, 3000);
   }
 
-  render() {
-    return <View style={styles.container} />;
+  popArticleNav() {
+    const rootNav = this.props.navigation.getNavigator('root');
+    rootNav.pop();
   }
 
+  render() {
+    const iconName = iconForSource(this.article.source);
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.articleTitle} numberOfLines={1}>
+            <FontAwesome
+              name={iconName}
+              size={16}
+            />
+            {' ' + this.article.title}
+          </Text>
+          <TouchableOpacity
+            onPress={_ => this.share()}
+            hitSlop={{ top: 5, bottom: 5, left: 15, right: 5 }}
+          >
+            <MiscIcon
+              name={'misc-out'}
+              size={17}
+              color={'white'}
+              style={styles.shareIcon}
+            />
+          </TouchableOpacity>
+        </View>
+        <ListView
+          dataSource={this.state.dataSource}
+          renderRow={(rowData) => rowData.article
+                              ? <ArticleHeader {...rowData} />
+                              : <Comment {...rowData} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.isRefreshing}
+              onRefresh={this.onRefresh}
+            />
+          }
+        />
+        <NavTabBar>
+          <NavBackButton onPress={() => this._back()} />
+          <NavArticleButton onPress={() => this._switchToArticle()} />
+          <NavActionButton onPress={() => this._articleAction()} />
+          <NavCreateButton
+            enabled={false}
+            onPress={() => this._createComment()}
+          />
+          <NavCheckButton onPress={() => this._articleCheck()} />
+        </NavTabBar>
+      </View>
+    );
+  }
+
+  _back = () => {
+    // TODO: Contextually go back a comment level if drilled down
+    // if (this.state.canGoBack){
+    //   this.goBack();
+    // } else {
+      this.popArticleNav();
+    // }
+  }
+
+  _switchToArticle = () => {
+    const nav = this.props.navigation.getNavigator('articleNav');
+    nav.jumpToTab('article');
+  }
+
+  _createComment = () => {
+    // TODO: Bring in readability.js
+  }
+
+  _articleCheck = () => {
+    this.popArticleNav();
+  }
 }
 
 const styles = StyleSheet.create({
@@ -173,40 +245,58 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.screenBase,
   },
-  filterSwitchContainer: {
-    flexDirection: 'row',
-    flex: 1,
-    justifyContent: 'flex-end',
-    width: 100,
-    height: 45,
-    alignItems: 'center',
-  },
-  rowFront: {
-    alignItems: 'center',
-    backgroundColor: '#CCC',
-    borderBottomColor: 'black',
-    borderBottomWidth: 1,
-    justifyContent: 'center',
-    height: 50,
-  },
-  rowBack: {
-    alignItems: 'center',
-    backgroundColor: '#DDD',
-    flex: 1,
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingLeft: 15,
-  }
-});
-
-const buttonStyles = StyleSheet.create({
-  buttonContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-end',
+    padding: 4,
+    height: 49,
+    backgroundColor: Colors.hcrBackground,
   },
-  button: {
-    margin: 16,
+  articleTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '100',
+    width: 330,
+  },
+  shareIcon: {
+    marginLeft: 4,
+    marginRight: 8,
+  },
+  commentContainer: {
+    backgroundColor: 'white',
+    paddingTop: 15,
+    paddingRight: 15,
+  },
+  top: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  author: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: Colors.commentHeader,
+  },
+  authorMe: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: Colors.commentHeaderOP,
+  },
+  secondary: {
+    fontSize: 14,
+    color: Colors.secondaryTitle,
+    textAlign: 'right',
+  },
+  commentParagraph: {
+    fontSize: 14,
+    color: 'black',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    paddingTop: 4,
+  },
+  actions: {
+    fontSize: 14,
+    color: Colors.secondaryTitle,
   },
 });

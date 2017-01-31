@@ -17,7 +17,7 @@ import {
 import Router from '../navigation/Router';
 import Alerts from '../constants/Alerts';
 import Colors from '../constants/Colors';
-import createCraftIcon from '../components/CraftIcon';
+import CraftIcon from '../components/CraftIcon';
 import registerForPushNotificationsAsync from '../api/registerForPushNotificationsAsync';
 
 export default class RootNavigation extends React.Component {
@@ -80,13 +80,11 @@ export default class RootNavigation extends React.Component {
   }
 
   _renderCraftIcon(name, isSelected, filledName = name) {
-    const CraftIcon = createCraftIcon();
     return (
       <CraftIcon
         name={isSelected ? filledName : name}
         size={28}
         color={isSelected ? Colors.tabIconSelected : Colors.tabIconDefault}
-        style={{marginVertical: -2, backgroundColor: 'transparent'}}
       />
     );
   }

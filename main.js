@@ -35,6 +35,7 @@ class AppContainer extends React.Component {
         fonts: [
           FontAwesome.font,
           {'hcr': require('./assets/fonts/hcr-icons-v5.ttf')},
+          {'misc': require('./assets/fonts/hcr-misc-icons.ttf')},
           {'space-mono': require('./assets/fonts/SpaceMono-Regular.ttf')},
         ],
       });

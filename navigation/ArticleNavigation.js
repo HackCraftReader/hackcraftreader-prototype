@@ -1,19 +1,14 @@
 import React from 'react';
 import {
-  Text,
+  View,
 } from 'react-native';
 import {
   StackNavigation,
   TabNavigation,
   TabNavigationItem,
 } from '@exponent/ex-navigation';
-import {
-  FontAwesome,
-} from '@exponent/vector-icons';
 
 import Router from '../navigation/Router';
-import Colors from '../constants/Colors';
-import createCraftIcon from '../components/CraftIcon';
 
 export default class ArticleNavigation extends React.Component {
 
@@ -23,17 +18,20 @@ export default class ArticleNavigation extends React.Component {
     return (
 
       <TabNavigation
-        tabBarHeight={44}
-        initialTab={initialTab}>
-
-        <TabNavigationItem id='article' title='article'>
+        ref={(tabs) => { this._tabs = tabs; }}
+        id='articleNav'
+        tabBarHeight={0}
+        initialTab={initialTab}
+        renderTabBar={(props) => <View />}
+      >
+        <TabNavigationItem id='article'>
           <StackNavigation
             id='browser'
             initialRoute={Router.getRoute('browser', {'article': article})}
           />
         </TabNavigationItem>
 
-        <TabNavigationItem id='comments' title='browser'>
+        <TabNavigationItem id='comments'>
           <StackNavigation
             id='comments'
             initialRoute={Router.getRoute('comments', {'article': article})}
@@ -43,35 +41,11 @@ export default class ArticleNavigation extends React.Component {
     );
   }
 
-  _renderCraftIcon(name, isSelected, filledName = name) {
-    const CraftIcon = createCraftIcon();
-    return (
-      <CraftIcon
-        name={isSelected ? filledName : name}
-        size={28}
-        color={isSelected ? Colors.tabIconSelected : Colors.tabIconDefault}
-        style={{marginVertical: -2, backgroundColor: 'transparent'}}
-      />
-    );
-  }
-
-  _renderFontAwesomeIcon(name, isSelected, filledName = name) {
-    return (
-      <FontAwesome
-        name={isSelected ? filledName : name}
-        size={24}
-        color={isSelected ? Colors.tabIconSelected : Colors.tabIconDefault}
-      />
-    );
-  }
-
-  _renderTitle = (isSelected, title, index) => {
-    return (
-      <Text
-        style={{color: isSelected ? Colors.tabIconSelected : Colors.tabIconDefault, fontSize: 9}}
-      >
-        {title}
-      </Text>
-    );
+  _selectedTab() {
+    // TODO: remove if this is not useful. Kept for reference...
+    const nav = this.props.navigation.getNavigator('articleNav');
+    const navState = nav._getNavigatorState();
+    return navState.routes[navState.index].key;
   }
 }
+

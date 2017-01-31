@@ -15,9 +15,5 @@ export default function extractDomain(url) {
   if (domain.startsWith('www.')) {
     domain = domain.slice(4);
   }
-  if (domain) {
-    domain = ` (${domain})`;
-  }
-
   return domain;
 }

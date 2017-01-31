@@ -6,26 +6,28 @@ import {
   ListView,
   TouchableOpacity,
   View,
+  InteractionManager,
 } from 'react-native';
 
 import {
   Ionicons,
 } from '@exponent/vector-icons';
 
-import moment from 'moment/src/moment'; // Moment ES6 workaround
-import Colors from '../constants/Colors';
-
-import Router from '../navigation/Router';
-
-import ArticleRow from '../components/ArticleRow';
-import ArticleSection from '../components/ArticleSection';
-import ArticleListOptionsDrawer from '../components/ArticleListOptionsDrawer';
-
 import {
   SwipeListView
 } from 'react-native-swipe-list-view';
 
 import MaterialSwitch from 'react-native-material-switch';
+
+import Colors from '../constants/Colors';
+
+import {HNTopStories} from '../assets/Stories';
+
+import Router from '../navigation/Router';
+
+import {ArticleRow} from '../components/ArticleComponents';
+import ArticleSection from '../components/ArticleSection';
+import ArticleListOptionsDrawer from '../components/ArticleListOptionsDrawer';
 
 const LEFT_BUTTON_HIT_SLOP = { top: 0, bottom: 0, left: 0, right: 30 };
 
@@ -42,7 +44,7 @@ const OptionsMenuButton = ({ config: { eventEmitter } }) => (
       style={buttonStyles.button}
     />
   </TouchableOpacity>
-  );
+);
 
 class FilterAndSearchButton extends Component {
   render() {
@@ -86,7 +88,9 @@ class FilterAndSearchButton extends Component {
   }
 
   _toggleFiltered = (state) => {
-    this.props.emitter.emit('setFiltered', state);
+    InteractionManager.runAfterInteractions(() => {
+      this.props.emitter.emit('setFiltered', state);
+    });
   }
 
   _toggleSearch = () => {
@@ -109,7 +113,7 @@ const FEED_LIST_ITEMS = [
 ];
 
 const TOP_GROUP_COUNT = {
-  title: 'GROUP SIZE',
+  title: 'STORIES PER GROUP',
   items: [
     {value: 5, selected: true},
     {value: 10, selected: false},
@@ -119,7 +123,7 @@ const TOP_GROUP_COUNT = {
 };
 
 const BYDAY_GROUP_COUNT = {
-  title: 'ITEMS PER DAY',
+  title: 'STORIES PER DAY',
   items: [
     {value: 5, selected: true},
     {value: 15, selected: false},
@@ -141,23 +145,14 @@ export default class ArticlesScreen extends React.Component {
     },
   }
 
-  static staticTopStories = require('../assets/hackernews/topStories.json');
-  static staticStoriesMeta = require('../assets/hackernews/meta.json');
-
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
-    var stories = ArticlesScreen.staticTopStories;
-    stories.forEach((story, index) => {
-      story.source = 'HN';
-      story.rank = index + 1;
-      story.when = moment(story.created_at_i * 1000).from(Number(ArticlesScreen.staticStoriesMeta.now_i * 1000));
-    });
     this.isTop = this.props.route.params.name === 'Top';
     this.state = {
       isRefreshing: false,
       basic: true,
-      stories: stories,
+      stories: HNTopStories,
       feedItems: FEED_LIST_ITEMS,
       groupCountTitle: this.isTop ? TOP_GROUP_COUNT.title : BYDAY_GROUP_COUNT.title,
       groupCountItems: this.isTop ? TOP_GROUP_COUNT.items : BYDAY_GROUP_COUNT.items,
@@ -184,6 +179,7 @@ export default class ArticlesScreen extends React.Component {
   render() {
     const groupSize = this.state.groupCountItems.filter(item => item.selected)[0].value;
     const groupedStories = this._groupStories(this.state.stories, groupSize);
+    // TODO: disable left-swipe in for drawer somehow.. conflicts with swipe on items.
     return (
       <ArticleListOptionsDrawer
         ref={(optionsDrawer) => { this._optionsDrawer = optionsDrawer; }}
@@ -214,10 +210,10 @@ export default class ArticlesScreen extends React.Component {
           refreshControl={
             <RefreshControl
               refreshing={this.state.isRefreshing}
-              onRefresh={this._onRefresh}
+              onRefresh={this.onRefresh}
             />
             }
-          renderHiddenRow={data => (
+          renderHiddenRow={data => (!data.isSection &&
             <View style={styles.rowBack}>
               <Text>Left</Text>
               <TouchableOpacity onPress={_ => this.toggleOptions()} >
@@ -237,52 +233,52 @@ export default class ArticlesScreen extends React.Component {
   }
 
   _setFiltered = filtered => {
-    console.log('filtered set!');
     this.props.navigator.updateCurrentRouteParams({filtered: filtered});
   }
 
   _updateFeedItems = newItems => {
-    console.log('update feed items');
+    //console.log('update feed items');
     this.setState({feedItems: newItems});
   }
 
   _updateGroupCountItems = newItems => {
-    console.log('update group items');
+    //console.log('update group items');
     this.setState({groupCountItems: newItems});
   }
 
   _checkAll = ({rangeStart, rangeEnd}) => {
-    console.log(rangeStart, rangeEnd);
+    //console.log(rangeStart, rangeEnd);
     alert('check all');
   }
 
   _upvoteArticle = article => {
-    console.log(Object.keys(article));
-    console.log(Object.keys(this));
+    //console.log(Object.keys(article));
+    //console.log(Object.keys(this));
     alert('upvote');
   }
 
   _checkArticle = article => {
-    console.log(Object.keys(article));
-    console.log(Object.keys(this));
+    //console.log(Object.keys(article));
+    //console.log(Object.keys(this));
     alert('check');
   }
 
   _craftArticle = article => {
-    console.log(Object.keys(article));
-    console.log(Object.keys(this));
+    //console.log(Object.keys(article));
+    //console.log(Object.keys(this));
     alert('check');
   }
 
   _openArticle = article => {
-    console.log(Object.keys(article));
-    console.log(Object.keys(this));
-    alert('article');
+    const rootNav = this.props.navigation.getNavigator('root');
+    const routeParams = {'screen': 'article', 'article': article};
+    rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
   _openComments = article => {
     const rootNav = this.props.navigation.getNavigator('root');
-    rootNav.push(Router.getRoute('articleNavigation', {'screen': 'comments', 'article': article}));
+    const routeParams = {'screen': 'comments', 'article': article};
+    rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
   _groupStories(stories, groupSize) {
