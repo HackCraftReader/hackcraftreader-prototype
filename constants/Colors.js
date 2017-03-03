@@ -35,6 +35,7 @@ export default {
 
   commentHeader: '#BF223F',
   commentHeaderOP: '#3985B8',
+  commentPreBackground: '#F7F7F7',
 
   optionsBackround: '#4D394B',
   optionsHeaderBackground: '#413040',

@@ -2,7 +2,7 @@
   "name": "test-hackcraft-reader",
   "description": "No description",
   "slug": "test-hackcraft-reader",
-  "sdkVersion": "12.0.0",
+  "sdkVersion": "14.0.0",
   "version": "1.0.0",
   "orientation": "portrait",
   "primaryColor": "#cccccc",

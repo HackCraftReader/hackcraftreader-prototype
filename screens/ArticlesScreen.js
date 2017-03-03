@@ -237,36 +237,27 @@ export default class ArticlesScreen extends React.Component {
   }
 
   _updateFeedItems = newItems => {
-    //console.log('update feed items');
     this.setState({feedItems: newItems});
   }
 
   _updateGroupCountItems = newItems => {
-    //console.log('update group items');
     this.setState({groupCountItems: newItems});
   }
 
   _checkAll = ({rangeStart, rangeEnd}) => {
-    //console.log(rangeStart, rangeEnd);
     alert('check all');
   }
 
   _upvoteArticle = article => {
-    //console.log(Object.keys(article));
-    //console.log(Object.keys(this));
     alert('upvote');
   }
 
   _checkArticle = article => {
-    //console.log(Object.keys(article));
-    //console.log(Object.keys(this));
     alert('check');
   }
 
   _craftArticle = article => {
-    //console.log(Object.keys(article));
-    //console.log(Object.keys(this));
-    alert('check');
+    alert('craft');
   }
 
   _openArticle = article => {

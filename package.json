@@ -15,13 +15,13 @@
     "@exponent/samples": "~1.0.2",
     "@exponent/vector-icons": "~2.0.3",
     "cheerio-without-node-native": "^0.20.2",
-    "exponent": "~12.0.0",
+    "exponent": "^14.0.0",
     "moment": "^2.17.1",
-    "react": "~15.3.1",
-    "react-native": "github:exponentjs/react-native#sdk-12.0.0",
+    "react": "~15.4.0",
+    "react-native": "https://github.com/exponent/react-native/archive/sdk-14.0.0.tar.gz",
     "react-native-drawer-layout": "^1.1.0",
     "react-native-material-switch": "github:kesha-antonov/react-native-material-switch",
-    "react-native-swipe-list-view": "^0.3.1",
+    "react-native-swipe-list-view": "^0.3.3",
     "url-parse": "^1.1.7"
   },
   "devDependencies": {
