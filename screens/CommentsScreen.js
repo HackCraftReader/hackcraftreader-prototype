@@ -5,6 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   ListView,
+  Share,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -16,6 +17,8 @@ import cheerio from 'cheerio-without-node-native';
 import {ArticleHeader} from '../components/ArticleComponents';
 
 import {StoriesMeta} from '../assets/Stories';
+
+import Router from '../navigation/Router';
 
 import { FontAwesome } from '@exponent/vector-icons';
 import MiscIcon from '../components/MiscIcon';
@@ -39,7 +42,7 @@ function iconForSource(source) {
   }
 }
 
-function domToComponents(el, key, style = null) {
+function domToComponents(el, key, openUrl, style = null) {
   if (el.type === 'text') {
     let t = el.data;
     const lines = t.split('\n');
@@ -71,7 +74,7 @@ function domToComponents(el, key, style = null) {
   }
   if (el.name === 'p') {
     let children = el.children.map(
-      (child, key) => domToComponents(child, key, styles.commentParagraphNormal)
+      (child, key) => domToComponents(child, key, openUrl, styles.commentParagraphNormal)
     );
     // Group our non-view children into Text groups
     let grouped = [];
@@ -128,19 +131,24 @@ function domToComponents(el, key, style = null) {
     if (!el.children.length) {
       return <Text style={style} key={key} />;
     }
-    if (el.children.length !== 1) {
-      console.log('Expected pre to have a single child: ', el);
-    }
-    return domToComponents(el.children[0], key, styles.commentParagraphItalic);
+    return (
+      <View key={key}>
+        {
+          el.children.map(
+            (child, key) => domToComponents(child, key, openUrl, styles.commentParagraphItalic)
+          )
+        }
+      </View>
+    );
   } else if (el.name === 'pre') {
     if (el.children.length !== 1) {
-      console.log('Expected italic to have a single child: ', el);
+      console.log('Expected pre to have a single child: ', el);
     }
     if (el.children[0].name !== 'code') {
       console.log('Expected pre to code child element: ', el);
     }
     let children = el.children[0].children.map(
-        (child, key) => domToComponents(child, key, styles.commentParagraphMono)
+        (child, key) => domToComponents(child, key, openUrl, styles.commentParagraphMono)
     );
     return (
       <ScrollView horizontal style={styles.commentPreScroll} key={key}>
@@ -154,41 +162,41 @@ function domToComponents(el, key, style = null) {
       console.log('Expected a to have a single child: ', el);
     }
     var baseStyle = style || styles.commentParagraphNormal;
-    var element = domToComponents(el.children[0], key, [baseStyle, {color: Colors.tintColor}]);
-    return React.cloneElement(element, {onPress: () => console.log(el.attribs.href)});
+    var element = domToComponents(el.children[0], key, openUrl, [baseStyle, {color: Colors.tintColor}]);
+    return React.cloneElement(element, {onPress: () => openUrl(el.attribs.href)});
   } else {
     console.log('Unknown tag name: ', el);
   }
 }
 
-function makeCommentTree(comments, level = 0) {
-  var flat = [];
-  comments.map(c => {
-    if (c.type === 'comment') {
-      const {id, created_at_i, author, text, parent_id, descendantsCount} = c;
-      const when = moment(created_at_i * 1000).from(Number(StoriesMeta.now_i * 1000));
-      var $ = cheerio.load(text);
-      var comment = [];
-      $.root().children().each((i, el) => {
-        comment.push(domToComponents(el, i));
-      });
-      const collapsable = level < 5 && descendantsCount > 5;
-      const collapsed = collapsable; // Start collapsed
-      flat.push({id, level, author, when, comment, parent_id, descendantsCount, collapsable, collapsed});
-      flat.push(...makeCommentTree(c.children, level + 1));
-    }
-  });
-  return flat;
+function CommentActions(props) {
+  return (
+    <View style={[styles.commentActionContainer,
+                  {paddingLeft: 15, paddingRight: 15},
+                  props.extraStyle]}>
+      {props.actions.map((action, idx) =>
+        <TouchableOpacity onPress={() => action.callback()} key={idx}>
+          <View style={styles.commentActionButton}>
+            <Text style={styles.commentActionLabel}>
+              {action.label}
+            </Text>
+          </View>
+        </TouchableOpacity>
+       )}
+    </View>
+  );
 }
 
 function Comment(props) {
   const authorStyle = props.author === 'hackcrafter'
                     ? styles.authorMe
                     : styles.author;
+  const extraStyle = props.extraStyle || {};
   let commentVar = (
     <View
       key={props.id}
       style={[styles.commentContainer,
+              extraStyle,
               {paddingLeft: (props.level + 1) * 15}]}
     >
       <View style={styles.top}>
@@ -289,9 +297,25 @@ export default class CommentsScreen extends React.Component {
   constructor(props) {
     super(props);
     this.article = this.props.route.params.article;
-    this.comments = makeCommentTree(this.article.children);
-    // TODO: potentially unshift header comment for sub-tree
-    this.comments.unshift({article: this.article}); // header
+    this.comments = this._makeCommentTree(this.article.children);
+
+    // Add callbacks
+    this.comments = this.comments.map(comment => {
+      return {
+        ...comment,
+        openThread: this._openThread,
+        toggleDescendents: this._toggleDescendents
+      };
+    });
+
+    this.rootCommentId = this.props.route.params.rootCommentId;
+
+    if (this.rootCommentId) {
+      this.allComments = this.comments;
+      this.comments = this._commentSubtree(this.allComments, this.rootCommentId);
+    }
+    // Header
+    this.comments.unshift({article: this.article});
 
     this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1.id !== r2.id});
     const filtered = filterComments(this.comments);
@@ -326,7 +350,7 @@ export default class CommentsScreen extends React.Component {
             {' ' + this.article.title}
           </Text>
           <TouchableOpacity
-            onPress={_ => this.share()}
+            onPress={_ => this._share()}
             hitSlop={{ top: 5, bottom: 5, left: 15, right: 5 }}
           >
             <MiscIcon
@@ -339,9 +363,13 @@ export default class CommentsScreen extends React.Component {
         </View>
         <ListView
           dataSource={this.state.dataSource}
-          renderRow={(rowData) => rowData.article
-                              ? <ArticleHeader {...rowData} />
-                              : <Comment {...{...rowData, openThread: this._openThread, toggleDescendents: this._toggleDescendents}} />}
+          renderRow={
+            (rowData) => {
+              if (rowData.article) return <ArticleHeader {...rowData} />;
+              else if (rowData.actions) return <CommentActions {...rowData} />;
+              else return <Comment {...rowData} />;
+            }
+          }
           refreshControl={
             <RefreshControl
               refreshing={this.state.isRefreshing}
@@ -365,9 +393,97 @@ export default class CommentsScreen extends React.Component {
       </View>
     );
   }
+  _share() {
+    // TODO: We actually want to share the original web comments page URL.
+    const { title, url } = this.article;
+    Share.share({
+      message: 'Comments Browsed to in HackCraft Reader',
+      url,
+      title
+    }, {
+      dialogTitle: 'Share Current Comments',
+    });
+    // Maybe a open in Safari button?
+    // Linking.openURL(this.state.url);
+  }
+
+  _makeCommentTree(comments, level = 0) {
+    var flat = [];
+    comments.map(c => {
+      if (c.type === 'comment') {
+        const {id, created_at_i, author, text, parent_id, descendantsCount} = c;
+        const when = moment(created_at_i * 1000).from(Number(StoriesMeta.now_i * 1000));
+        var $ = cheerio.load(text);
+        var comment = [];
+        $.root().children().each((i, el) => {
+          comment.push(domToComponents(el, i, this._openUrl));
+        });
+        const collapsable = level < 5 && descendantsCount > 5;
+        const collapsed = collapsable; // Start collapsed
+        flat.push({id, level, author, when, comment, parent_id, descendantsCount, collapsable, collapsed});
+        flat.push(...this._makeCommentTree(c.children, level + 1));
+      }
+    });
+    return flat;
+  }
+
+  _commentSubtree(comments, commentId) {
+    // Filter on parent_id
+    let keepWithParentIds = [commentId];
+    let subTree = comments.filter(comment => {
+      if (keepWithParentIds.includes(comment.parent_id)) {
+        // Children will be filtered as well
+        keepWithParentIds.push(comment.id);
+        return true;
+      }
+      return false;
+    });
+
+    // Find our root comment
+    let rootComment = comments.filter(c => c.id === commentId)[0];
+
+    // Drop all their levels so children of commentId are 0
+    let levelOffset = rootComment.level + 1;
+    subTree = subTree.map(c => { c.level -= levelOffset; return c; });
+
+    // Update root
+    rootComment.level = 0;
+    rootComment.collapsed = false;
+    rootComment.collapsable = false;
+    rootComment.extraStyle = {
+      borderTopColor: Colors.outline,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      backgroundColor: Colors.screenBase
+    };
+
+    const actions = { actions: [
+      {
+        label: 'Up Level',
+        callback: this._upLevel
+      },
+      {
+        label: 'Next Comment',
+        callback: this._nextComment
+      }
+    ]};
+
+    // Put actions in front and back
+    subTree.unshift(actions);
+    subTree.push(actions);
+    subTree.unshift(rootComment);
+    return subTree;
+  }
 
   _openThread = (commentId) => {
-    alert('open thread' + commentId);
+    const commentNav = this.props.navigation.getNavigator('commentsNav');
+    const commentNavParams = {article: this.article, rootCommentId: commentId};
+    commentNav.push(Router.getRoute('comments', commentNavParams));
+  }
+
+  _openUrl = (url) => {
+    const commentNav = this.props.navigation.getNavigator('commentsNav');
+    const browserParams = {articleId: this.article.id, url: url};
+    commentNav.push(Router.getRoute('browser', browserParams));
   }
 
   _toggleDescendents = (commentId) => {
@@ -382,17 +498,57 @@ export default class CommentsScreen extends React.Component {
   }
 
   _back = () => {
-    // TODO: Contextually go back a comment level if drilled down
-    // if (this.state.canGoBack){
-    //   this.goBack();
-    // } else {
+    const nav = this.props.navigation.getNavigator('commentsNav');
+    if (nav.getCurrentIndex() > 0) {
+      nav.pop();
+      return;
+    }
     this.popArticleNav();
-    // }
+  }
+
+  _upLevel = () => {
+    this._back();
+  }
+
+  _nextComment = () => {
+    let nextCommmentId = null;
+    let curRootAndChildren = [this.rootCommentId];
+    let hasSeenRoot = false;
+    for (let comment of this.allComments) {
+      if (curRootAndChildren.includes(comment.parent_id)) {
+        // Children will be filtered as well
+        curRootAndChildren.push(comment.id);
+        hasSeenRoot = true;
+      } else if (comment.id === this.rootCommentId) {
+        hasSeenRoot = true;
+      } else if (hasSeenRoot) {
+        nextCommmentId = comment.id;
+        break;
+      }
+    }
+    if (!nextCommmentId) {
+      return this._upLevel();
+    }
+
+    this.rootCommentId = nextCommmentId;
+    this.comments = this._commentSubtree(this.allComments, this.rootCommentId);
+    this.comments.unshift({article: this.article});
+
+    const filtered = filterComments(this.comments);
+    this.setState({
+      dataSource: this.ds.cloneWithRows(filtered)
+    });
   }
 
   _switchToArticle = () => {
     const nav = this.props.navigation.getNavigator('articleNav');
     nav.jumpToTab('article');
+  }
+
+  _articleAction = () => {
+    const commentNav = this.props.navigation.getNavigator('commentsNav');
+    const actionParams = {type: 'article', articleId: this.article.id};
+    commentNav.push(Router.getRoute('action', actionParams));
   }
 
   _createComment = () => {
@@ -414,6 +570,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     padding: 4,
+    paddingLeft: 15,
     height: 49,
     backgroundColor: Colors.hcrBackground,
   },
@@ -492,7 +649,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   commentActionButton: {
-    backgroundColor: 'white',
     width: 140,
     borderRadius: 3,
     borderColor: Colors.outline,

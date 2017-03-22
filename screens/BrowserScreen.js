@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   Linking,
+  Share,
   WebView,
 } from 'react-native';
 
@@ -21,6 +22,7 @@ import MiscIcon from '../components/MiscIcon';
 import NavTabBar, {
   NavBackButton,
   NavCommentsButton,
+  NavDisabledCommentsButton,
   NavActionButton,
   NavReadableButton,
   NavCheckButton,
@@ -39,12 +41,14 @@ export default class BrowserScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    this.article = this.props.route.params.article;
-    const domain = extractDomain(this.article.url);
-    this.comments = this.article.children;
+    this.articleId = this.props.route.params.articleId;
+    const childrenCount = this.props.route.params.childrenCount;
+    const domain = extractDomain(this.props.url);
     this.bgColor = Colors.hcrBackground;
     this.overlayColor = Colors.hcrBackgroundOverlay;
     this.state = {
+      hasComments: childrenCount !== undefined,
+      childrenCount: childrenCount,
       canGoBack: false,
       isLoading: true,
       domain: domain,
@@ -60,7 +64,7 @@ export default class BrowserScreen extends React.Component {
 
   componentWillMount() {
     InteractionManager.runAfterInteractions(() => {
-      this.setState({'url': this.article.url});
+      this.setState({url: this.props.url});
     });
   }
 
@@ -85,10 +89,6 @@ export default class BrowserScreen extends React.Component {
   popArticleNav() {
     const rootNav = this.props.navigation.getNavigator('root');
     rootNav.pop();
-  }
-
-  share() {
-    Linking.openURL(this.state.url);
   }
 
   render() {
@@ -121,7 +121,7 @@ export default class BrowserScreen extends React.Component {
             </Text>
             {this.state.isLoading ? loading : reload}
           </View>
-          <TouchableOpacity onPress={_ => this.share()}>
+          <TouchableOpacity onPress={_ => this._share()}>
             <MiscIcon
               name={'misc-out'}
               size={17}
@@ -139,10 +139,14 @@ export default class BrowserScreen extends React.Component {
         />
         <NavTabBar>
           <NavBackButton onPress={() => this._back()} />
-          <NavCommentsButton
-            count={this.comments.length}
-            onPress={() => this._switchToComments()}
-          />
+          {
+          this.state.hasComments ? (
+            <NavCommentsButton
+              count={this.state.childrenCount}
+              onPress={() => this._switchToComments()}
+            /> )
+          : <NavDisabledCommentsButton />
+          }
           <NavActionButton onPress={() => this._articleAction()} />
           <NavReadableButton
             enabled={false}
@@ -154,11 +158,24 @@ export default class BrowserScreen extends React.Component {
     );
   }
 
+  _share() {
+    const { title, url } = this.state;
+    Share.share({
+      message: 'Article Browsed to in HackCraft Reader',
+      url,
+      title
+    }, {
+      dialogTitle: 'Share Current Article',
+    });
+    // Maybe a open in Safari button?
+    // Linking.openURL(this.state.url);
+  }
+
   _onNavigationStateChange = (navState) => {
     // console.log(navState);
     const url = (
       navState.url === 'about:blank'
-    ? this.article.url
+    ? this.props.url
     : navState.url
     );
     const changed = navState.url !== this.state.url;
@@ -167,6 +184,7 @@ export default class BrowserScreen extends React.Component {
       canGoBack: navState.canGoBack,
       url: url,
       domain: domain,
+      title: navState.title || url,
       isLoading: (
         navState.loading ||
         !navState.title ||
@@ -176,9 +194,14 @@ export default class BrowserScreen extends React.Component {
   }
 
   _back = () => {
-    if (this.state.canGoBack){
+    if (this.state.canGoBack) {
       this.goBack();
     } else {
+      const nav = this.props.navigation.getNavigator('commentsNav');
+      if (nav.getCurrentIndex() > 0) {
+        nav.pop();
+        return;
+      }
       this.popArticleNav();
     }
   }

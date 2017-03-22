@@ -66,6 +66,21 @@ export function NavCommentsButton(props) {
   );
 }
 
+export function NavDisabledCommentsButton(props) {
+  return (
+    <View style={styles.tabItem}>
+      <View style={{flex: 1}}>
+        <CraftIcon
+          name='hcr-comment'
+          size={30}
+          color={Colors.disabledItem}
+          style={styles.commentIcon}
+        />
+      </View>
+    </View>
+  );
+}
+
 export function NavBackButton(props) {
   return NavIonButton({...props, name: 'ios-arrow-back-outline'});
 }

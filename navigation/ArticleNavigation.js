@@ -26,14 +26,18 @@ export default class ArticleNavigation extends React.Component {
       >
         <TabNavigationItem id='article'>
           <StackNavigation
-            id='browser'
-            initialRoute={Router.getRoute('browser', {'article': article})}
+            id='browserNav'
+            initialRoute={
+              Router.getRoute('browser', {
+                'childrenCount': article.children.length,
+                'url': article.url
+              })}
           />
         </TabNavigationItem>
 
         <TabNavigationItem id='comments'>
           <StackNavigation
-            id='comments'
+            id='commentsNav'
             initialRoute={Router.getRoute('comments', {'article': article})}
           />
         </TabNavigationItem>

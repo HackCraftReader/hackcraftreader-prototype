@@ -23,6 +23,19 @@ export default {
   screenBase: '#F2F2F2',
   sectionText: '#808080',
 
+  inputBackground: '#F5F5F5',
+  inputBorder: '#E0E0E0',
+
+  outline: '#95989A',
+
+  starBlue: '#8C88FF',
+  starGreen: '#4FD2C2',
+  starRed: '#FF3366',
+  starOrange: '#FCAB52',
+
+  actionLabel: '#212121',
+  actionSubLabel: '#7B7B7B',
+
   hcrBackground: '#4FD2C2',
   hcrButtonBackground: '#42AC9F',
   hcrBackgroundOverlay: 'rgba(0, 124, 109, 0.38)',

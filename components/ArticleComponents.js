@@ -95,7 +95,7 @@ export function ArticleHeader(props) {
   );
 
   return (
-    <View style={{flexDirection: 'column', padding: 6}}>
+    <View style={{flexDirection: 'column', paddingRight: 15, paddingLeft: 16, paddingTop: 6, paddingBottom: 6}}>
       <ArticleTitleAndDomain {...props} />
       <View style={{flexDirection: 'row'}}>
         <Text style={styles.attributesWithWeight}>{props.article.author} • </Text>
