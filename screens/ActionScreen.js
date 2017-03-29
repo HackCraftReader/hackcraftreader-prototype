@@ -2,11 +2,7 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
-  ScrollView,
-  RefreshControl,
-  ListView,
   TextInput,
-  TouchableOpacity,
   TouchableHighlight,
   TouchableWithoutFeedback,
   View,
@@ -16,38 +12,17 @@ import {
   NavigationStyles
 } from '@exponent/ex-navigation';
 
-import moment from 'moment/src/moment'; // Moment ES6 workaround
+import {observer, inject} from 'mobx-react/native';
 
-import { FontAwesome } from '@exponent/vector-icons';
 import CraftIcon from '../components/CraftIcon';
+
+import {TagToggle, Tags} from '../components/Tags';
+import {Snooze} from '../components/Snooze';
 
 import Colors from '../constants/Colors';
 
-// TODO: onPress does nav pop in an action specific way, sets state of this action being toggled on
-// Toggled on means should wrap in a view with background = F2 and touchable hightlight white, otherwise, background white and touchable F2.
-
-function Action(props) {
-  return (
-    <TouchableHighlight onPress={() => alert('hi')}
-    underlayColor='#F2F2F2'>
-      <View style={styles.actionContainer}>
-        <CraftIcon
-          name={props.iconName}
-          size={48}
-          color={'#666666'}
-          style={{textAlign: 'center'}}
-        />
-        <Text style={styles.actionLabel}>
-          {props.label}
-        </Text>
-        <Text style={styles.actionTime}>
-          {props.time}
-        </Text>
-      </View>
-    </TouchableHighlight>
-  );
-}
-
+@inject('ItemStore')
+@observer
 export default class ActionScreen extends React.Component {
   static route = {
     navigationBar: {
@@ -87,89 +62,76 @@ export default class ActionScreen extends React.Component {
     }
   }
 
+  constructor(props) {
+    super(props);
+    const { itemId, updateCallback } = this.props.route.params;
+    const item = this.props.ItemStore.item(itemId);
+    const noteText = item.note;
+    this.state = {noteText, item, updateCallback};
+  }
+
   render() {
-    const tomorrow = moment().add(1, 'day');
-    const shortTomorrow = moment.weekdaysShort(tomorrow.weekday());
-    const starHitSlop = { top: 25, bottom: 30, left: 25, right: 25 };
+    const ActionTagToggle = ({tag}) =>
+      <TagToggle
+        tag={tag}
+        toggled={this._isTagged(tag)}
+        onPress={() => this._toggleTag(tag)}
+        hitSlopValue={8}
+      />;
+
+    const SnoozeButton = ({label, iconName}) =>
+      <ActionButton
+        iconName={iconName}
+        label={Snooze.snoozeRelativeLabel(label)}
+        subLabel={Snooze.snoozeRelativeTime(label)}
+        toggled={this.state.item.isSnoozed(label)}
+        onPress={() => this._toggleSnooze(label)}
+      />;
+
     return (
       <TouchableWithoutFeedback
         onPress={_ => this._close()}
       >
         <View style={styles.background}>
           <View style={styles.container}>
-            <View style={styles.tagLayout}>
-              <TouchableOpacity
-                onPress={_ => this.reload()}
-                hitSlop={starHitSlop}
-              >
-                <FontAwesome
-                  name={'star-o'}
-                  size={40}
-                  color={Colors.starBlue}
-                  style={styles.star}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={_ => this.reload()}
-                hitSlop={starHitSlop}
-              >
-                <FontAwesome
-                  name={'star'}
-                  size={40}
-                  color={Colors.starGreen}
-                  style={styles.star}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={_ => this.reload()}
-                hitSlop={starHitSlop}
-              >
-                <FontAwesome
-                  name={'star-o'}
-                  size={40}
-                  color={Colors.starRed}
-                  style={styles.star}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={_ => this.reload()}
-                hitSlop={starHitSlop}
-              >
-                <FontAwesome
-                  name={'star-o'}
-                  size={40}
-                  color={Colors.starOrange}
-                  style={styles.star}
-                />
-              </TouchableOpacity>
+            <View style={styles.tagContainer}>
+              <View style={styles.tagRow}>
+                <ActionTagToggle tag={Tags.TagPurple} />
+                <ActionTagToggle tag={Tags.TagOrange} />
+              </View>
+              <View style={styles.tagRow}>
+                <ActionTagToggle tag={Tags.TagRed} />
+                <ActionTagToggle tag={Tags.TagGreen} />
+              </View>
             </View>
             <TextInput
               multiline
               placeholder='My note here...'
               style={styles.noteInput}
-              onEndEditing={() => this._close()} />
+              value={this.state.noteText}
+              onChangeText={(noteText) => this.setState({noteText})}
+              onEndEditing={() => this._saveMyNote()} />
             <View style={styles.iconRow}>
-              <Action
+              <SnoozeButton
+                label='Weekend'
                 iconName='hcr-couch'
-                label='This weekend'
-                time='Sat 7:30 am'
               />
-              <Action
+              <SnoozeButton
+                label='Evening'
                 iconName='hcr-sun-half'
-                label='Later today'
-                time='6:00 pm'
               />
             </View>
             <View style={styles.iconRow}>
-              <Action
-                iconName='hcr-sun-full'
+              <SnoozeButton
                 label='Tomorrow'
-                time={shortTomorrow + ' 7:00 am'}
+                iconName='hcr-sun-full'
               />
-              <Action
+              <ActionButton
                 iconName='hcr-pin'
                 label='Pin'
-                time='To Top'
+                subLabel='To Top'
+                toggled={this._isPinned()}
+                onPress={() => this._togglePinned()}
               />
             </View>
           </View>
@@ -180,7 +142,65 @@ export default class ActionScreen extends React.Component {
 
   _close = () => {
     this.props.navigator.pop();
+    if (this.state.updateCallback) {
+      this.state.updateCallback();
+    }
   }
+
+  _saveMyNote = () => {
+    this.state.item.setNote(this.state.noteText);
+  }
+
+  _toggleTag = (tag) => {
+    this.state.item.tagToggle(tag);
+    this._close();
+  }
+
+  _isTagged = (tag) => {
+    return this.state.item.isTagged(tag);
+  }
+
+  _toggleSnooze = (when) => {
+    this.state.item.snoozeToggle(when);
+    this._close();
+  }
+
+  _isPinned = () => {
+    return this.state.item.pinned;
+  }
+
+  _togglePinned = () => {
+    this.state.item.pinToggle();
+    this._close();
+  }
+}
+
+function ActionButton(props) {
+  const {iconName, label, subLabel, onPress, toggled} = props;
+  const underlayColor = toggled ? 'white' : '#F2F2F2';
+  const background = toggled ? {backgroundColor: '#F2F2F2'} : {};
+
+  return (
+    <TouchableHighlight
+      onPress={onPress}
+      underlayColor={underlayColor}
+    >
+      <View style={[styles.actionContainer, background]}>
+        <CraftIcon
+          name={iconName}
+          size={48}
+          color={'#666666'}
+          style={{textAlign: 'center'}}
+        />
+        <Text style={styles.actionLabel}>
+          {label}
+        </Text>
+        <Text style={styles.actionSubLabel}>
+          {subLabel}
+        </Text>
+      </View>
+    </TouchableHighlight>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -205,13 +225,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
   },
 
-  tagLayout: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-
   noteInput: {
     height: 200,
     backgroundColor: Colors.inputBackground,
@@ -230,9 +243,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
 
-  star: {
-  },
-
   actionContainer: {
     width: 161,
     flexDirection: 'column',
@@ -245,9 +255,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.actionLabel,
   },
-  actionTime: {
+  actionSubLabel: {
     fontSize: 12,
     textAlign: 'center',
     color: Colors.actionSubLabel,
+  },
+
+  tagContainer: {
+    flexDirection: 'column',
+    height: 80,
+    padding: 5,
+  },
+
+  tagRow: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
   },
 });

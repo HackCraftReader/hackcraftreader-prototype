@@ -6,6 +6,9 @@ import { FontAwesome } from '@exponent/vector-icons';
 
 export default class ArticleSection extends React.Component {
   render() {
+    if (!this.props.section.itemIds.length) {
+      return <View />;
+    }
     const iconName = this.props.section.iconName;
     const title = this.props.section.title;
     return (

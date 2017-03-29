@@ -14,7 +14,8 @@ export default class ArticleNavigation extends React.Component {
 
   render() {
     const initialTab = this.props.route.params.screen;
-    const article = this.props.route.params.article;
+    const itemId = this.props.route.params.itemId;
+    const url = this.props.route.params.url;
     return (
 
       <TabNavigation
@@ -28,17 +29,14 @@ export default class ArticleNavigation extends React.Component {
           <StackNavigation
             id='browserNav'
             initialRoute={
-              Router.getRoute('browser', {
-                'childrenCount': article.children.length,
-                'url': article.url
-              })}
+              Router.getRoute('browser', {itemId, url})}
           />
         </TabNavigationItem>
 
         <TabNavigationItem id='comments'>
           <StackNavigation
             id='commentsNav'
-            initialRoute={Router.getRoute('comments', {'article': article})}
+            initialRoute={Router.getRoute('comments', {itemId})}
           />
         </TabNavigationItem>
       </TabNavigation>

@@ -13,18 +13,26 @@ import {
   Ionicons,
 } from '@exponent/vector-icons';
 
+
+import { withNavigation, createFocusAwareComponent } from '@exponent/ex-navigation';
+
 import {
-  SwipeListView
+  SwipeListView, SwipeRow
 } from 'react-native-swipe-list-view';
 
 import MaterialSwitch from 'react-native-material-switch';
 
 import Colors from '../constants/Colors';
 
-import {HNTopStories} from '../assets/Stories';
+import {observer, inject} from 'mobx-react/native';
+
+import {loadHNTopArticles} from '../assets/Stories';
+
+import ItemStore from '../store/ItemStore';
 
 import Router from '../navigation/Router';
 
+import CraftIcon from '../components/CraftIcon';
 import {ArticleRow} from '../components/ArticleComponents';
 import ArticleSection from '../components/ArticleSection';
 import ArticleListOptionsDrawer from '../components/ArticleListOptionsDrawer';
@@ -135,6 +143,11 @@ const BYDAY_GROUP_COUNT = {
 // TODO:
 // add signaling
 // push search screen, may not do grouping (or maybe it searches all?)
+// @observer(['FeedStore', 'ItemStore'])
+@inject('ItemStore')
+@observer
+@createFocusAwareComponent
+@withNavigation
 export default class ArticlesScreen extends React.Component {
   static route = {
     navigationBar: {
@@ -149,13 +162,19 @@ export default class ArticlesScreen extends React.Component {
     super(props);
     this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
     this.isTop = this.props.route.params.name === 'Top';
+    const showDone = !this.props.route.params.filtered;
+    const groupCountItems = this.isTop ? TOP_GROUP_COUNT.items : BYDAY_GROUP_COUNT.items;
+    const groupCountTitle = this.isTop ? TOP_GROUP_COUNT.title : BYDAY_GROUP_COUNT.title;
+    const articles = loadHNTopArticles();
+
     this.state = {
       isRefreshing: false,
       basic: true,
-      stories: HNTopStories,
+      showDone,
+      articles,
       feedItems: FEED_LIST_ITEMS,
-      groupCountTitle: this.isTop ? TOP_GROUP_COUNT.title : BYDAY_GROUP_COUNT.title,
-      groupCountItems: this.isTop ? TOP_GROUP_COUNT.items : BYDAY_GROUP_COUNT.items,
+      groupCountTitle,
+      groupCountItems,
     };
   }
 
@@ -177,9 +196,10 @@ export default class ArticlesScreen extends React.Component {
   }
 
   render() {
-    const groupSize = this.state.groupCountItems.filter(item => item.selected)[0].value;
-    const groupedStories = this._groupStories(this.state.stories, groupSize);
+//    const groupSize = this.state.groupCountItems.filter(item => item.selected)[0].value;
+//    const groupedArticles = this._groupArticles(this.state.articles, this.state.showDone, groupSize);
     // TODO: disable left-swipe in for drawer somehow.. conflicts with swipe on items.
+    const dataSource = this._articleList(this.state);
     return (
       <ArticleListOptionsDrawer
         ref={(optionsDrawer) => { this._optionsDrawer = optionsDrawer; }}
@@ -187,45 +207,58 @@ export default class ArticlesScreen extends React.Component {
         feedItems={this.state.feedItems}
         groupCountTitle={this.state.groupCountTitle}
         groupCountItems={this.state.groupCountItems}
-        updateFeedItems={this._updateFeedItems}
+       updateFeedItems={this._updateFeedItems}
         updateGroupCountItems={this._updateGroupCountItems}
       >
         <SwipeListView
           style={styles.container}
           contentContainerStyle={this.props.route.getContentContainerStyle()}
-          dataSource={this.ds.cloneWithRows(groupedStories)}
-          renderRow={data =>
-            (data.isSection
-            ? <ArticleSection section={data} checkAll={this._checkAll} />
-            : <ArticleRow
-              article={data}
-              isLast={data.isLast}
-              upvote={this._upvoteArticle}
-              check={this._checkArticle}
-              craft={this._craftArticle}
-              openArticle={this._openArticle}
-              openComments={this._openComments}
-              />
-            )}
+          dataSource={dataSource}
+          renderRow={this._renderRow}
           refreshControl={
             <RefreshControl
               refreshing={this.state.isRefreshing}
               onRefresh={this.onRefresh}
             />
             }
-          renderHiddenRow={data => (!data.isSection &&
-            <View style={styles.rowBack}>
-              <Text>Left</Text>
-              <TouchableOpacity onPress={_ => this.toggleOptions()} >
-                <Text> Right </Text>
-              </TouchableOpacity>
-            </View>
+          renderHiddenRow={(data, secId, rowId, rowMap) =>
+            (!data.isSection &&
+            <SwipeActions
+              article={data}
+              check={this._checkArticle}
+              craft={this._craftArticle}
+              close={_ => rowMap[`${secId}${rowId}`].closeRow()}
+            />
             )}
           leftOpenValue={75}
           rightOpenValue={-75}
+          closeOnRowPress
         />
       </ArticleListOptionsDrawer>
     );
+  }
+
+  _renderRow = data => {
+    if (data.isSection) {
+      return <ArticleSection section={data} checkAll={this._checkAll} />;
+    } else {
+      return <ArticleRow
+               article={data}
+               isLast={data.isLast}
+               upvote={this._upvoteArticle}
+               openArticle={this._openArticle}
+               openComments={this._openComments}
+             />;
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.isFocused && !this.props.isFocused) { //becomes focused
+      console.log('become focused');
+      this.setState({});
+    } else if (!nextProps.isFocused && this.props.isFocused) { //becomes unfocused
+      console.log('loose focused');
+    }
   }
 
   _toggleOptions = () => {
@@ -234,64 +267,121 @@ export default class ArticlesScreen extends React.Component {
 
   _setFiltered = filtered => {
     this.props.navigator.updateCurrentRouteParams({filtered: filtered});
+    const showDone = !filtered;
+    this.setState({showDone});
   }
 
-  _updateFeedItems = newItems => {
+  _updateFeedItems = newItems => {    
     this.setState({feedItems: newItems});
   }
 
-  _updateGroupCountItems = newItems => {
-    this.setState({groupCountItems: newItems});
+  _updateGroupCountItems = groupCountItems => {
+    this.setState({groupCountItems});
   }
 
-  _checkAll = ({rangeStart, rangeEnd}) => {
-    alert('check all');
+  _checkAll = ({itemIds}) => {
+    itemIds.forEach(itemId => {
+      const item = ItemStore.item(itemId);
+      if (!item.done) {
+        item.doneSet();
+      }
+    });
+    this.setState({});
   }
 
   _upvoteArticle = article => {
-    alert('upvote');
+    ItemStore.item(article.itemId).upvote();
+    this.setState({});
   }
 
   _checkArticle = article => {
-    alert('check');
+    article.doneToggle();
+    this.setState({});
   }
 
   _craftArticle = article => {
-    alert('craft');
+    const commentNav = this.props.navigation.getNavigator('root');
+    const actionParams = {type: 'article', itemId: article.itemId, updateCallback: this._updateArticleList};
+    commentNav.push(Router.getRoute('action', actionParams));
+  }
+
+  _updateArticleList = () => {
+    this.setState({});
   }
 
   _openArticle = article => {
     const rootNav = this.props.navigation.getNavigator('root');
-    const routeParams = {'screen': 'article', 'article': article};
+    const routeParams = {'screen': 'article', itemId: article.itemId, url: article.url};
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
   _openComments = article => {
     const rootNav = this.props.navigation.getNavigator('root');
-    const routeParams = {'screen': 'comments', 'article': article};
+    const routeParams = {'screen': 'comments', itemId: article.itemId, url: article.url};
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
-  _groupStories(stories, groupSize) {
+  _groupArticles(articles, showDone, groupSize) {
     var title = 'TOP';
-    // if(!this.isTop) - compute by day title
-    var groupedStories = [];
-    stories.forEach((story, idx) => {
+    var curGroup = null;
+    var groupedArticles = [];
+    articles.forEach((article, idx) => {
       if (idx % groupSize === 0) {
-        if (idx > 0) groupedStories[groupedStories.length - 1].isLast = true;
-        groupedStories.push(
+        if (idx > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
+        curGroup =
           { 'isSection': true,
             'title': `${title} ${idx + 1}-${idx + groupSize}`,
             'iconName': 'y-combinator-square',
             'rangeStart': idx,
-            'rangeEnd': idx + groupSize
-          });
+            'rangeEnd': idx + groupSize,
+            'itemIds': []
+          };
+        groupedArticles.push(curGroup);
       }
-      groupedStories.push(story);
+      if (!showDone || !article.done) {
+        groupedArticles.push(article);
+        curGroup.itemIds.push(article.itemId);
+      }
     });
-    if (groupedStories.length > 0) groupedStories[groupedStories.length - 1].isLast = true;
-    return groupedStories;
+    if (groupedArticles.length > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
+    return groupedArticles;
   }
+
+  _articleList({articles, showDone, groupCountItems}) {
+    const groupSize = groupCountItems.filter(item => item.selected)[0].value;
+    const groupedArticles = this._groupArticles(articles, showDone, groupSize);
+
+    return this.ds.cloneWithRows(groupedArticles);
+  }
+}
+
+function SwipeActions({article, check, craft, close}) {
+  const slop = { top: 30, bottom: 30, left: 30, right: 30 };
+
+  return (
+    <View style={styles.rowBack}>
+      <View style={styles.checkContainer}>
+        <TouchableOpacity onPress={() => {close(); check(article);}} hitSlop={slop}>
+          <CraftIcon
+            name='hcr-check'
+            size={37}
+            color='white'
+            style={styles.actionIcon}
+          />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.craftContainer}>
+        <TouchableOpacity onPress={() => {close(); craft(article);}} hitSlop={slop}>
+          <CraftIcon
+            name='hcr-action'
+            size={37}
+            color='white'
+            style={styles.actionIcon}
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -316,12 +406,24 @@ const styles = StyleSheet.create({
     height: 50,
   },
   rowBack: {
-    alignItems: 'center',
-    backgroundColor: '#DDD',
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingLeft: 15,
+    padding: 0,
+    margin: 0,
+  },
+  checkContainer: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    backgroundColor: '#5F99CF',
+    flex: 1,
+    padding: 10,
+  },
+  craftContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    backgroundColor: Colors.hcrBackground,
+    flex: 1,
+    padding: 10,
   }
 });
 

@@ -18,6 +18,10 @@ import {
 
 import Colors from '../constants/Colors';
 
+import {observer, inject} from 'mobx-react/native';
+
+import Router from '../navigation/Router';
+
 import MiscIcon from '../components/MiscIcon';
 import NavTabBar, {
   NavBackButton,
@@ -30,6 +34,8 @@ import NavTabBar, {
 
 import extractDomain from '../utilities/extractDomain';
 
+@inject('ItemStore')
+@observer
 export default class BrowserScreen extends React.Component {
   static route = {
     navigationBar: {
@@ -41,13 +47,14 @@ export default class BrowserScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    this.articleId = this.props.route.params.articleId;
-    const childrenCount = this.props.route.params.childrenCount;
+    const { itemId } = this.props.route.params;
+    this.article = this.props.ItemStore.item(itemId);
+    const childrenCount = this.article.descendantsCount;
     const domain = extractDomain(this.props.url);
     this.bgColor = Colors.hcrBackground;
     this.overlayColor = Colors.hcrBackgroundOverlay;
     this.state = {
-      hasComments: childrenCount !== undefined,
+      hasComments: this.article.url === this.props.url,
       childrenCount: childrenCount,
       canGoBack: false,
       isLoading: true,
@@ -144,15 +151,15 @@ export default class BrowserScreen extends React.Component {
             <NavCommentsButton
               count={this.state.childrenCount}
               onPress={() => this._switchToComments()}
-            /> )
+            />)
           : <NavDisabledCommentsButton />
           }
-          <NavActionButton onPress={() => this._articleAction()} />
+          <NavActionButton onPress={() => this._craftArticle()} />
           <NavReadableButton
             enabled={false}
             onPress={() => this._switchToReadable()}
           />
-          <NavCheckButton onPress={() => this._articleCheck()} />
+          <NavCheckButton onPress={() => this._articleDone()} />
         </NavTabBar>
       </View>
     );
@@ -197,11 +204,6 @@ export default class BrowserScreen extends React.Component {
     if (this.state.canGoBack) {
       this.goBack();
     } else {
-      const nav = this.props.navigation.getNavigator('commentsNav');
-      if (nav.getCurrentIndex() > 0) {
-        nav.pop();
-        return;
-      }
       this.popArticleNav();
     }
   }
@@ -211,11 +213,18 @@ export default class BrowserScreen extends React.Component {
     nav.jumpToTab('comments');
   }
 
+  _craftArticle = () => {
+    const nav = this.props.navigation.getNavigator('browserNav');
+    const actionParams = {type: 'article', itemId: this.article.itemId};
+    nav.push(Router.getRoute('action', actionParams));
+  }
+
   _switchToReadable = () => {
     // TODO: Bring in readability.js
   }
 
-  _articleCheck = () => {
+  _articleDone = () => {
+    this.article.doneSet();
     this.popArticleNav();
   }
 }

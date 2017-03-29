@@ -1,7 +1,7 @@
 {
-  "name": "test-hackcraft-reader",
-    "description": "Static Data HackCraft Reader prototype",
-  "slug": "test-hackcraft-reader",
+  "name": "HackCraft Reader Prototype",
+  "description": "Static Data HackCraft Reader prototype",
+  "slug": "hackcraft-reader-prototype",
   "sdkVersion": "14.0.0",
   "version": "1.0.0",
   "orientation": "portrait",

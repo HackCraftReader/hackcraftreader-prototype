@@ -17,6 +17,13 @@ import {
 import Router from './navigation/Router';
 import cacheAssetsAsync from './utilities/cacheAssetsAsync';
 
+import { Provider } from 'mobx-react/native';
+
+import ItemStore from './store/ItemStore.js';
+//import UserStore from './store/UserStore.js';
+const stores = { ItemStore }; // In case you have more than one store
+
+
 class AppContainer extends React.Component {
   state = {
     appIsReady: false,
@@ -54,12 +61,14 @@ class AppContainer extends React.Component {
     if (this.state.appIsReady) {
       return (
         <View style={styles.container}>
-          <NavigationProvider router={Router}>
-            <StackNavigation
-              id='root'
-              initialRoute={Router.getRoute('rootNavigation')}
-            />
-          </NavigationProvider>
+          <Provider {...stores}>
+            <NavigationProvider router={Router}>
+              <StackNavigation
+                id='root'
+                initialRoute={Router.getRoute('rootNavigation')}
+              />
+            </NavigationProvider>
+          </Provider>
 
           {Platform.OS === 'ios' && <StatusBar barStyle='light-content' />}
           {Platform.OS === 'android' && <View style={styles.statusBarUnderlay} />}

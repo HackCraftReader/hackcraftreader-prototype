@@ -18,6 +18,12 @@ import {ArticleHeader} from '../components/ArticleComponents';
 
 import {StoriesMeta} from '../assets/Stories';
 
+import {observer, inject} from 'mobx-react/native';
+
+import {loadComments} from '../assets/Stories';
+
+import ItemStore from '../store/ItemStore';
+
 import Router from '../navigation/Router';
 
 import { FontAwesome } from '@exponent/vector-icons';
@@ -148,7 +154,7 @@ function domToComponents(el, key, openUrl, style = null) {
       console.log('Expected pre to code child element: ', el);
     }
     let children = el.children[0].children.map(
-        (child, key) => domToComponents(child, key, openUrl, styles.commentParagraphMono)
+      (child, key) => domToComponents(child, key, openUrl, styles.commentParagraphMono)
     );
     return (
       <ScrollView horizontal style={styles.commentPreScroll} key={key}>
@@ -188,25 +194,25 @@ function CommentActions(props) {
 }
 
 function Comment(props) {
-  const authorStyle = props.author === 'hackcrafter'
+  const {comment, openThread, toggleDescendents, craftComment, upvoteComment, extraStyle, level, collapsable} = props;
+  const authorStyle = comment.author === 'hackcrafter'
                     ? styles.authorMe
                     : styles.author;
-  const extraStyle = props.extraStyle || {};
   let commentVar = (
     <View
-      key={props.id}
+      key={comment.itemId}
       style={[styles.commentContainer,
               extraStyle,
-              {paddingLeft: (props.level + 1) * 15}]}
+              {paddingLeft: (level + 1) * 15}]}
     >
       <View style={styles.top}>
         <Text style={authorStyle}>
-          {props.author}
+          {comment.author}
         </Text>
-        <Text style={styles.secondary}>{props.when}</Text>
+        <Text style={styles.secondary}>{comment.when}</Text>
       </View>
       <View>
-        {props.comment}
+        {comment.comment}
       </View>
       <View style={styles.actionsRow}>
         <TouchableOpacity
@@ -224,7 +230,7 @@ function Comment(props) {
         <Text style={styles.actions}> • </Text>
         <TouchableOpacity
           style={{flexDirection: 'row'}}
-          onPress={() => console.log('craft')}
+          onPress={() => craftComment(comment.itemId)}
         >
           <CraftIcon
             name='hcr-action-filled'
@@ -237,7 +243,7 @@ function Comment(props) {
         <Text style={styles.actions}> • </Text>
         <TouchableOpacity
           style={{flexDirection: 'row'}}
-          onPress={() => console.log('upvote')}
+          onPress={() => upvoteComment(comment.itemId)}
         >
           <CraftIcon
             name='hcr-upvote-filled'
@@ -248,20 +254,20 @@ function Comment(props) {
           <Text style={styles.actions}> upvote</Text>
         </TouchableOpacity>
       </View>
-      {props.collapsable &&
+      {collapsable &&
        (
          <View style={styles.commentActionContainer}>
-           <TouchableOpacity onPress={() => props.openThread(props.id)}>
+           <TouchableOpacity onPress={() => openThread(comment.itemId)}>
              <View style={styles.commentActionButton}>
                <Text style={styles.commentActionLabel}>
                  Open Thread
                </Text>
              </View>
            </TouchableOpacity>
-           <TouchableOpacity onPress={() => props.toggleDescendents(props.id)}>
+           <TouchableOpacity onPress={() => toggleDescendents(comment.itemId)}>
              <View style={styles.commentActionButton}>
                <Text style={styles.commentActionLabel}>
-                 {props.descendantsCount} Replies
+                 {comment.descendantsCount} Replies
                </Text>
              </View>
            </TouchableOpacity>
@@ -272,21 +278,23 @@ function Comment(props) {
   return commentVar;
 }
 
-function filterComments(comments) {
+function filterComments(comments, collapsed) {
   let filterWithParentIds = [];
-  return comments.filter(comment => {
-    if (comment.collapsed) {
-      filterWithParentIds.push(comment.id);
+  return comments.filter(c => {
+    if (collapsed[c.itemId]) {
+      filterWithParentIds.push(c.itemId);
     }
-    if (filterWithParentIds.includes(comment.parent_id)) {
+    if (filterWithParentIds.includes(c.parentItemId)) {
       // Children will be filtered as well
-      filterWithParentIds.push(comment.id);
+      filterWithParentIds.push(c.itemId);
       return false;
     }
     return true;
   });
 }
 
+@inject('ItemStore')
+@observer
 export default class CommentsScreen extends React.Component {
   static route = {
     navigationBar: {
@@ -296,30 +304,28 @@ export default class CommentsScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    this.article = this.props.route.params.article;
-    this.comments = this._makeCommentTree(this.article.children);
-
-    // Add callbacks
-    this.comments = this.comments.map(comment => {
-      return {
-        ...comment,
-        openThread: this._openThread,
-        toggleDescendents: this._toggleDescendents
-      };
-    });
+    const { itemId } = this.props.route.params;
+    this.article = this.props.ItemStore.item(itemId);
+    let state = {
+      level: {},
+      collapsable: {},
+      collapsed: {}
+    };
+    this.comments = this._makeCommentTree(loadComments(this.article), state);
 
     this.rootCommentId = this.props.route.params.rootCommentId;
 
     if (this.rootCommentId) {
       this.allComments = this.comments;
-      this.comments = this._commentSubtree(this.allComments, this.rootCommentId);
+      this.comments = this._commentSubtree(this.allComments, this.rootCommentId, state);
     }
     // Header
     this.comments.unshift({article: this.article});
 
-    this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1.id !== r2.id});
-    const filtered = filterComments(this.comments);
+    this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+    const filtered = filterComments(this.comments, state.collapsed);
     this.state = {
+      ...state,
       isRefreshing: false,
       dataSource: this.ds.cloneWithRows(filtered)
     };
@@ -347,7 +353,7 @@ export default class CommentsScreen extends React.Component {
               name={iconName}
               size={16}
             />
-            {' ' + this.article.title}
+            {' ' + this.article.text}
           </Text>
           <TouchableOpacity
             onPress={_ => this._share()}
@@ -363,36 +369,63 @@ export default class CommentsScreen extends React.Component {
         </View>
         <ListView
           dataSource={this.state.dataSource}
-          renderRow={
-            (rowData) => {
-              if (rowData.article) return <ArticleHeader {...rowData} />;
-              else if (rowData.actions) return <CommentActions {...rowData} />;
-              else return <Comment {...rowData} />;
-            }
-          }
+          renderRow={this._renderRow}
           refreshControl={
             <RefreshControl
               refreshing={this.state.isRefreshing}
               onRefresh={this.onRefresh}
-            />
-          }
+                        />
+                         }
         />
-        <View>
-          <View style={{marginTop: 44.5}} />
-        </View>
-        <NavTabBar>
-          <NavBackButton onPress={() => this._back()} />
-          <NavArticleButton onPress={() => this._switchToArticle()} />
-          <NavActionButton onPress={() => this._articleAction()} />
-          <NavCreateButton
-            enabled={false}
-            onPress={() => this._createComment()}
-          />
-          <NavCheckButton onPress={() => this._articleCheck()} />
-        </NavTabBar>
+            <View>
+              <View style={{marginTop: 44.5}} />
+            </View>
+            <NavTabBar>
+              <NavBackButton onPress={() => this._back()} />
+              <NavArticleButton onPress={() => this._switchToArticle()} />
+              <NavActionButton onPress={() => this._craftArticle()} />
+              <NavCreateButton
+                enabled={false}
+                onPress={() => this._createComment()}
+              />
+              <NavCheckButton onPress={() => this._articleDone()} />
+            </NavTabBar>
       </View>
     );
   }
+
+  _renderRow = (rowData) => {
+    if (rowData.article) {
+      return <ArticleHeader {...rowData} />;
+    }
+    else if (rowData.actions){
+      return <CommentActions {...rowData} />;
+    }
+    else {
+      const comment = rowData;
+      let extraStyle = {};
+      if (comment.itemId === this.rootCommentId) {
+        extraStyle = {
+          borderTopColor: Colors.outline,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          backgroundColor: Colors.screenBase
+        };
+      };
+      const level = this.state.level[comment.itemId];
+      const collapsable = this.state.collapsable[comment.itemId];
+      return <Comment
+               comment={comment}
+               extraStyle={extraStyle}
+               level={level}
+               collapsable={collapsable}
+               craftComment={this._craftComment}
+               upvoteComment={this._upvoteComment}
+               openThread={this._openThread}
+               toggleDescendents={this._toggleDescendents}
+             />;
+    }
+  }
+
   _share() {
     // TODO: We actually want to share the original web comments page URL.
     const { title, url } = this.article;
@@ -407,65 +440,68 @@ export default class CommentsScreen extends React.Component {
     // Linking.openURL(this.state.url);
   }
 
-  _makeCommentTree(comments, level = 0) {
+  _makeCommentTree(comments, state, level = 0) {
     var flat = [];
     comments.map(c => {
       if (c.type === 'comment') {
-        const {id, created_at_i, author, text, parent_id, descendantsCount} = c;
-        const when = moment(created_at_i * 1000).from(Number(StoriesMeta.now_i * 1000));
-        var $ = cheerio.load(text);
+        state.level[c.itemId] = level;
+        state.collapsable[c.itemId] = level < 5 && c.descendantsCount > 5;
+        state.collapsed[c.itemId] = state.collapsable[c.itemId];
+
+        // Parse HTML text into JSX here... (eventually delay to display time)
+        var $ = cheerio.load(c.text);
         var comment = [];
         $.root().children().each((i, el) => {
           comment.push(domToComponents(el, i, this._openUrl));
         });
-        const collapsable = level < 5 && descendantsCount > 5;
-        const collapsed = collapsable; // Start collapsed
-        flat.push({id, level, author, when, comment, parent_id, descendantsCount, collapsable, collapsed});
-        flat.push(...this._makeCommentTree(c.children, level + 1));
+        c.comment = comment;
+        
+        flat.push(c);
+        if (c.children.length > 0) {
+          flat.push(...this._makeCommentTree(c.children, state, level + 1));
+        }
       }
     });
     return flat;
   }
 
-  _commentSubtree(comments, commentId) {
+  _commentSubtree(comments, rootCommentId, state) {
     // Filter on parent_id
-    let keepWithParentIds = [commentId];
+    let keepWithParentIds = [rootCommentId];
     let subTree = comments.filter(comment => {
-      if (keepWithParentIds.includes(comment.parent_id)) {
+      if (keepWithParentIds.includes(comment.parentItemId)) {
         // Children will be filtered as well
-        keepWithParentIds.push(comment.id);
+        keepWithParentIds.push(comment.itemId);
         return true;
       }
       return false;
     });
 
     // Find our root comment
-    let rootComment = comments.filter(c => c.id === commentId)[0];
+    let rootComment = comments.filter(c => c.itemId === rootCommentId)[0];
 
-    // Drop all their levels so children of commentId are 0
-    let levelOffset = rootComment.level + 1;
-    subTree = subTree.map(c => { c.level -= levelOffset; return c; });
+    // Drop all their levels so children of rootCommentId are 0
+    let levelOffset = state.level[rootCommentId] + 1;
+    subTree.forEach(c => state.level[c.itemId] -= levelOffset);
 
     // Update root
-    rootComment.level = 0;
-    rootComment.collapsed = false;
-    rootComment.collapsable = false;
-    rootComment.extraStyle = {
-      borderTopColor: Colors.outline,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      backgroundColor: Colors.screenBase
-    };
+    state.level[rootCommentId] = 0;
+    state.collapsed[rootCommentId] = false;
+    state.collapsable[rootCommentId] = false;
 
-    const actions = { actions: [
-      {
-        label: 'Up Level',
-        callback: this._upLevel
-      },
-      {
-        label: 'Next Comment',
-        callback: this._nextComment
-      }
-    ]};
+    const actions = {
+      actions: [
+        {
+          label: 'Up Level',
+          callback: this._upLevel
+        },
+        {
+          label: 'Next Comment',
+          callback: this._nextComment
+        }
+      ],
+      toJs() { return 'actions'; }
+    };
 
     // Put actions in front and back
     subTree.unshift(actions);
@@ -476,25 +512,23 @@ export default class CommentsScreen extends React.Component {
 
   _openThread = (commentId) => {
     const commentNav = this.props.navigation.getNavigator('commentsNav');
-    const commentNavParams = {article: this.article, rootCommentId: commentId};
+    const commentNavParams = {itemId: this.article.itemId, url: this.article.url, rootCommentId: commentId};
     commentNav.push(Router.getRoute('comments', commentNavParams));
   }
 
   _openUrl = (url) => {
     const commentNav = this.props.navigation.getNavigator('commentsNav');
-    const browserParams = {articleId: this.article.id, url: url};
+    const browserParams = {itemId: this.article.itemId, url: url};
     commentNav.push(Router.getRoute('browser', browserParams));
   }
 
   _toggleDescendents = (commentId) => {
-    this.comments = this.comments.map(comment => {
-      if (comment.id === commentId) {
-        comment.collapsed = !comment.collapsed;
-      }
-      return comment;
+    this.state.collapsed[commentId] = !this.state.collapsed[commentId];
+    const filtered = filterComments(this.comments, this.state.collapsed);
+    this.setState({
+      collapsed: this.state.collapsed,
+      dataSource: this.ds.cloneWithRows(filtered)
     });
-    const filtered = filterComments(this.comments);
-    this.setState({dataSource: this.ds.cloneWithRows(filtered)});
   }
 
   _back = () => {
@@ -515,14 +549,14 @@ export default class CommentsScreen extends React.Component {
     let curRootAndChildren = [this.rootCommentId];
     let hasSeenRoot = false;
     for (let comment of this.allComments) {
-      if (curRootAndChildren.includes(comment.parent_id)) {
+      if (curRootAndChildren.includes(comment.parentItemId)) {
         // Children will be filtered as well
-        curRootAndChildren.push(comment.id);
+        curRootAndChildren.push(comment.itemId);
         hasSeenRoot = true;
-      } else if (comment.id === this.rootCommentId) {
+      } else if (comment.itemId === this.rootCommentId) {
         hasSeenRoot = true;
       } else if (hasSeenRoot) {
-        nextCommmentId = comment.id;
+        nextCommmentId = comment.itemId;
         break;
       }
     }
@@ -531,11 +565,12 @@ export default class CommentsScreen extends React.Component {
     }
 
     this.rootCommentId = nextCommmentId;
-    this.comments = this._commentSubtree(this.allComments, this.rootCommentId);
+    this.comments = this._commentSubtree(this.allComments, this.rootCommentId, this.state);
     this.comments.unshift({article: this.article});
 
-    const filtered = filterComments(this.comments);
+    const filtered = filterComments(this.comments, this.state.collapsed);
     this.setState({
+      ...this.state,
       dataSource: this.ds.cloneWithRows(filtered)
     });
   }
@@ -545,9 +580,21 @@ export default class CommentsScreen extends React.Component {
     nav.jumpToTab('article');
   }
 
-  _articleAction = () => {
+  _craftComment = (commentId) => {
     const commentNav = this.props.navigation.getNavigator('commentsNav');
-    const actionParams = {type: 'article', articleId: this.article.id};
+    const actionParams = {type: 'comment', itemId: commentId};
+    commentNav.push(Router.getRoute('action', actionParams));
+  }
+
+  _upvoteComment = (commentId) => {
+    // TODO: change state
+    ItemStore.item(commentId).upvote();
+    this.setState({});
+  }
+
+  _craftArticle = () => {
+    const commentNav = this.props.navigation.getNavigator('commentsNav');
+    const actionParams = {type: 'article', itemId: this.article.itemId};
     commentNav.push(Router.getRoute('action', actionParams));
   }
 
@@ -555,7 +602,8 @@ export default class CommentsScreen extends React.Component {
     // TODO: Bring in readability.js
   }
 
-  _articleCheck = () => {
+  _articleDone = () => {
+    this.article.doneSet();
     this.popArticleNav();
   }
 }

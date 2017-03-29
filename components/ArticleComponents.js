@@ -1,6 +1,7 @@
 import React from 'react';
-import {Text, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Text, StyleSheet, TouchableOpacity, TouchableHighlight, View} from 'react-native';
 import CraftIcon from '../components/CraftIcon';
+import { FontAwesome } from '@exponent/vector-icons';
 import Colors from '../constants/Colors';
 import extractDomain from '../utilities/extractDomain';
 
@@ -21,30 +22,74 @@ export function UpVote({article, upvote}) {
   );
 }
 
-export function ArticleTitleAndDomain({article, openArticle}) {
+export function ArticleTitleAndDomain({article}) {
   let domain = extractDomain(article.url);
   if (domain) {
     domain = ` (${domain})`;
   }
+  let extras = [];
+  if (article.pinned) {
+    extras.push(
+      <View key={'pinned'} style={[styles.tag, {backgroundColor: '#FF5722'}]}>
+        <CraftIcon
+          name='hcr-pin'
+          size={12}
+          color={'white'}
+          style={{marginTop: 2, marginLeft: -1}}
+        />
+        <Text style={{fontSize: 12, color: 'white'}}>
+          pinned
+        </Text>
+      </View>
+    );
+  }
+  for (let code in article.tags) {
+    const tag = article.tags[code];
+    extras.push(
+      <View key={code} style={[styles.tag, {backgroundColor: tag.color}]}>
+        <Text style={{fontSize: 12, color: 'white'}}>
+          {tag.label}
+        </Text>
+      </View>
+    );
+  }
+  article.activeSnoozed.forEach(snooze => {
+    extras.push(
+      <View key={snooze.label} style={[styles.tag, {backgroundColor: '#FCAB52'}]}>
+        <FontAwesome
+          name='clock-o'
+          size={12}
+          color={'white'}
+          style={{marginTop: 1, paddingLeft: 1, paddingRight: 2}}
+        />
+        <Text style={{fontSize: 12, color: 'white'}}>
+          {snooze.label}
+        </Text>
+      </View>
+    );
+  });
+  
   return (
-    <TouchableOpacity
-      onPress={() => openArticle(article)}
-    >
+    <View style={{flexDirection: 'column'}}>
       <Text style={styles.articleTitle}>
-        {article.title}
+        {article.text}
         <Text style={styles.articleDomain}>{domain}</Text>
       </Text>
-    </TouchableOpacity>
+      <View style={{flexWrap: 'wrap', flexDirection: 'row'}}>
+        {extras}
+      </View>
+    </View>
   );
 }
 
 export function ArticleRow(props) {
+  const {article, isLast, upvote, openArticle, openComments} = props;
   const slop = {top: 0, bottom: 0, left: 5, right: 0};
   const comment = (
     <TouchableOpacity
       style={styles.commentIconTouch}
       hitSlop={slop}
-      onPress={() => props.openComments(props.article)}
+      onPress={() => openComments(article)}
     >
       <View style={{flex: 1}}>
         <CraftIcon
@@ -54,33 +99,42 @@ export function ArticleRow(props) {
           style={styles.commentIcon}
         />
         <Text style={styles.commentText}>
-          {props.article.numberOfComments}
+          {article.descendantsCount}
         </Text>
       </View>
     </TouchableOpacity>
   );
 
-  const last = props.isLast;
+  const bg = article.done
+           ? {backgroundColor: '#F2F2F2'}
+           : {backgroundColor: 'white'};
 
   return (
+    <View style={bg}>
+    <TouchableHighlight
+      onPress={() => openArticle(article)}
+      underlayColor='#F2F2F2'
+    >
     <View style={styles.rowContainer}>
-      <View style={[styles.left, !last && styles.bottomBorder]}>
-        <Text style={styles.rankText}>{props.article.rank}</Text>
+      <View style={[styles.left, !isLast && styles.bottomBorder]}>
+        <Text style={styles.rankText}>{article.rank}</Text>
       </View>
-      <View style={[styles.center, !last && styles.bottomBorder]}>
+      <View style={[styles.center, !isLast && styles.bottomBorder]}>
         <View style={{flexDirection: 'column'}}>
           <ArticleTitleAndDomain {...props} />
           <View style={{flexDirection: 'row'}}>
-            <Text style={styles.attributes}>{props.article.when} • </Text>
-            <Text style={styles.attributesWithWeight}>{props.article.points}</Text>
-            <Text style={styles.attributes}>• </Text>
+            <Text style={styles.attributes}>{article.when} • </Text>
+            <Text style={styles.attributesWithWeight}>{article.points}</Text>
+            <Text style={styles.attributes}> • </Text>
             <UpVote {...props} />
           </View>
         </View>
       </View>
-      <View style={[styles.right, !last && styles.bottomBorder]}>
+      <View style={[styles.right, !isLast && styles.bottomBorder]}>
         {comment}
       </View>
+    </View>
+    </TouchableHighlight>
     </View>
   );
 }
@@ -96,10 +150,14 @@ export function ArticleHeader(props) {
 
   return (
     <View style={{flexDirection: 'column', paddingRight: 15, paddingLeft: 16, paddingTop: 6, paddingBottom: 6}}>
-      <ArticleTitleAndDomain {...props} />
+      <TouchableOpacity
+        onPress={() => openArticle(article)}
+      >
+        <ArticleTitleAndDomain {...props} />
+      </TouchableOpacity>
       <View style={{flexDirection: 'row'}}>
         <Text style={styles.attributesWithWeight}>{props.article.author} • </Text>
-        <Text style={styles.attributes}>{props.article.when} • {props.article.numberOfComments} {commentIcon} • </Text>
+        <Text style={styles.attributes}>{props.article.when} • {props.article.descendantsCount} {commentIcon} • </Text>
         <Text style={styles.attributesWithWeight}>{props.article.points}</Text>
         <Text style={styles.attributes}> • </Text>
         <UpVote {...props} />
@@ -112,7 +170,6 @@ const styles = StyleSheet.create({
   rowContainer: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: Colors.scrollBackground,
   },
   bottomBorder: {
     borderBottomColor: Colors.hairlineBorder,
@@ -147,6 +204,17 @@ const styles = StyleSheet.create({
   articleDomain: {
     color: Colors.secondaryTitle,
     fontSize: 15,
+  },
+  tag: {
+    borderRadius: 3,
+    paddingLeft: 4,
+    paddingRight: 4,
+    paddingTop: 0,
+    paddingBottom: 0,
+    margin: 2,
+    flex: -1,
+    flexDirection: 'row',
+    height: 15,
   },
   attributes: {
     color: Colors.secondaryTitle,

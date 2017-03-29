@@ -21,6 +21,11 @@ import SettingsScreen from '../screens/SettingsScreen';
 import RootNavigation from './RootNavigation';
 import ArticleNavigation from './ArticleNavigation';
 
+// We pass our mobx items through routes currently
+const routerOption = {
+  ignoreSerializableWarnings: true
+};
+
 export default createRouter(() => ({
   top: () => ArticlesScreen,
   byday: () => ArticlesScreen,
@@ -34,4 +39,4 @@ export default createRouter(() => ({
   articleNavigation: () => ArticleNavigation,
   comments: () => CommentsScreen,
   browser: () => BrowserScreen,
-}));
+}), routerOption);
