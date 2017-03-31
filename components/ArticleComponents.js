@@ -22,13 +22,19 @@ export function UpVote({article, upvote}) {
   );
 }
 
-export function ArticleTitleAndDomain({article}) {
-  let domain = extractDomain(article.url);
-  if (domain) {
-    domain = ` (${domain})`;
+function firstCoupleWords(text) {
+  const words = text.match(/\S+/g) || [];
+  const phrase = words.slice(0,3).join(' ').substring(0,25);
+  if (phrase === words.join(' ')) {
+    return phrase; // We didn't truncate
+  } else {
+    return phrase + '...';
   }
+}
+
+export function ItemStateRow({item}) {
   let extras = [];
-  if (article.pinned) {
+  if (item.pinned) {
     extras.push(
       <View key={'pinned'} style={[styles.tag, {backgroundColor: '#FF5722'}]}>
         <CraftIcon
@@ -38,13 +44,13 @@ export function ArticleTitleAndDomain({article}) {
           style={{marginTop: 2, marginLeft: -1}}
         />
         <Text style={{fontSize: 12, color: 'white'}}>
-          pinned
+          Pinned
         </Text>
       </View>
     );
   }
-  for (let code in article.tags) {
-    const tag = article.tags[code];
+  for (let code in item.tags) {
+    const tag = item.tags[code];
     extras.push(
       <View key={code} style={[styles.tag, {backgroundColor: tag.color}]}>
         <Text style={{fontSize: 12, color: 'white'}}>
@@ -53,7 +59,24 @@ export function ArticleTitleAndDomain({article}) {
       </View>
     );
   }
-  article.activeSnoozed.forEach(snooze => {
+
+  if (item.note) {
+    const noteText = firstCoupleWords(item.note);
+    extras.push(
+      <View key={'note'} style={[styles.tag, {backgroundColor: '#3BA8FF'}]}>
+        <FontAwesome
+          name='sticky-note-o'
+          size={12}
+          color={'white'}
+          style={{marginTop: 1, paddingLeft: 1, paddingRight: 2}}
+        />
+        <Text style={{fontSize: 12, color: 'white'}}>
+          {noteText}
+        </Text>
+      </View>
+    );
+  }
+  item.activeSnoozed.forEach(snooze => {
     extras.push(
       <View key={snooze.label} style={[styles.tag, {backgroundColor: '#FCAB52'}]}>
         <FontAwesome
@@ -68,16 +91,30 @@ export function ArticleTitleAndDomain({article}) {
       </View>
     );
   });
-  
+
+  return (
+    <View style={{flexWrap: 'wrap', flexDirection: 'row'}}>
+      {extras}
+    </View>
+  );
+}
+
+export function ArticleTitleAndDomain({article}) {
+  let domain = extractDomain(article.url);
+  if (domain) {
+    domain = ` (${domain})`;
+  }
+  const bg = article.done
+           ? {color: '#CAC4C9'}
+           : {};
+
   return (
     <View style={{flexDirection: 'column'}}>
-      <Text style={styles.articleTitle}>
+      <Text style={[styles.articleTitle, bg]}>
         {article.text}
-        <Text style={styles.articleDomain}>{domain}</Text>
+        <Text style={[styles.articleDomain, bg]}>{domain}</Text>
       </Text>
-      <View style={{flexWrap: 'wrap', flexDirection: 'row'}}>
-        {extras}
-      </View>
+      <ItemStateRow item={article} />
     </View>
   );
 }
@@ -105,15 +142,14 @@ export function ArticleRow(props) {
     </TouchableOpacity>
   );
 
-  const bg = article.done
-           ? {backgroundColor: '#F2F2F2'}
-           : {backgroundColor: 'white'};
+  // I used to color background based on article.done, but not a fan of that currently.
+  const bg = {backgroundColor: 'white'};
 
   return (
     <View style={bg}>
     <TouchableHighlight
       onPress={() => openArticle(article)}
-      underlayColor='#F2F2F2'
+      underlayColor='#E8F0FE'
     >
     <View style={styles.rowContainer}>
       <View style={[styles.left, !isLast && styles.bottomBorder]}>

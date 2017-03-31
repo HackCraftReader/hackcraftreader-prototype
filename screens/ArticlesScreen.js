@@ -26,6 +26,8 @@ import Colors from '../constants/Colors';
 
 import {observer, inject} from 'mobx-react/native';
 
+import * as mobx from 'mobx';
+
 import {loadHNTopArticles} from '../assets/Stories';
 
 import ItemStore from '../store/ItemStore';
@@ -160,7 +162,7 @@ export default class ArticlesScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+    this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => mobx.toJS(r1) !== mobx.toJS(r2)});
     this.isTop = this.props.route.params.name === 'Top';
     const showDone = !this.props.route.params.filtered;
     const groupCountItems = this.isTop ? TOP_GROUP_COUNT.items : BYDAY_GROUP_COUNT.items;
@@ -196,8 +198,6 @@ export default class ArticlesScreen extends React.Component {
   }
 
   render() {
-//    const groupSize = this.state.groupCountItems.filter(item => item.selected)[0].value;
-//    const groupedArticles = this._groupArticles(this.state.articles, this.state.showDone, groupSize);
     // TODO: disable left-swipe in for drawer somehow.. conflicts with swipe on items.
     const dataSource = this._articleList(this.state);
     return (
@@ -207,7 +207,7 @@ export default class ArticlesScreen extends React.Component {
         feedItems={this.state.feedItems}
         groupCountTitle={this.state.groupCountTitle}
         groupCountItems={this.state.groupCountItems}
-       updateFeedItems={this._updateFeedItems}
+        updateFeedItems={this._updateFeedItems}
         updateGroupCountItems={this._updateGroupCountItems}
       >
         <SwipeListView

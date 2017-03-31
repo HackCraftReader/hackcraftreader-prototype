@@ -10,13 +10,10 @@ import {
   View,
 } from 'react-native';
 
-import moment from 'moment/src/moment'; // Moment ES6 workaround
 import Colors from '../constants/Colors';
 import cheerio from 'cheerio-without-node-native';
 
-import {ArticleHeader} from '../components/ArticleComponents';
-
-import {StoriesMeta} from '../assets/Stories';
+import {ArticleHeader, ItemStateRow} from '../components/ArticleComponents';
 
 import {observer, inject} from 'mobx-react/native';
 
@@ -214,6 +211,7 @@ function Comment(props) {
       <View>
         {comment.comment}
       </View>
+      <ItemStateRow item={comment} />
       <View style={styles.actionsRow}>
         <TouchableOpacity
           style={{flexDirection: 'row'}}

@@ -1,105 +1,54 @@
+Missing small features:
+* group pinned to top
+* vote turns to unvote
+* vote on comments
+* inbox zero screen
+* events need to capture enough of item do display in notification screen
+
+Missing big features:
+* Log screen
+* static reddit data
+* by day feed
+* search in articles screen
+* time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics
+* mock up replies / comments
+* Notifications screen
+* Settings Screen
+
+Upgrades:
+* Expo 15
+* FlatList instead of ListView for Comments / Articles (speed, scroll
+to item support)
+ -  - https://github.com/facebook/react-native/blob/0.43-stable/Libraries/CustomComponents/Lists/FlatList.js
+ * some solution for 'Done' to close keyboard on notes
+ * New react-navigation and react-router for deep-linking (handling
+   links from log / notifications screen)
+
+Comments polish:
+ * numbers zero, italics not in-line 
  * (in German):\n<a href showing on one line...
- * numbers zero, italics not in-line
  * next comment up level scrolls to current comment in parent tree
  (possibly new new experimental scroll view)
 
-Action Screen
- * Pass in '$item'  (use '$' to denote observed variables)
- * hook up remaining callbacks
- * hook up EventStore to also update ArticleStore (aggregate values)
- * integrated Done on notes (temporary, until switch to native solution)
 
-Article/Commetns
-* Pass in $item everwhere
-* render tags, notes and pins on every item
-* Ensure snooze and pin have toggled down rendering / underlay color
-correct
-* hook up actions everwhere
-* render left / right swipe
-* Set up acticle done actions and state
+Persistence with Relay is storying activity log as source of truth.
 
- * notifications screen
+We lazy load for each item bieng read whether it was in the activity
+log (by item key) into memory.
 
-
- * hook up fake voting everwhere
-
- * search in articles screen
- 
- * comments / article have some way of indicating a
-   snooze/note/pin/tag has been made. For comment screen, maybe place
-   a header section with things like:
-   - Article Tags: [ Words of Wisdom ]
-   - Comment Tags: [ I Could Use This ]
-   - Snoozed to Tomorrow Monring (10am)
-   - Pinned
-   - Previous Posts of This Article:
-     - Two days ago on Hacker News: 214 Comments
-     - One month ago on /r/programming: 21 Comments
-     Or maybe in the header we use some color to indicate this
-     Or maybe we color the action icon for the comments/article
-
- * record the time spent on comments / articles nav. Nav entry/leave?
-   component lifestyle hooks? Nees to work even with nav back swipe etc.
+May need specialized stores for:
+- Active Snoozes
+- Acitive Pinned
+- Settings / Preferences / Configurations / Authentications
+- Item done / not done?
+   - Since we don't find this useful to put in activity log, it may
+     make sense to have a optimized store of all items that have been
+     marked "done" to allow quick lookup. Maybe simple key: value of
+     item_id: date. We would remove items from store if clearing "done"
 
 
-data model
-
-history:
-- item: article ref (get name, comment, stats, points)
-  - item history (event list), event types:
-   - reading session on article / comments, aggregate to total time
-    - comment written  
-    - action made to artcle, comments page or specific comment
-      - tag added / removed
-      - snooze added
-      - pin added  / removed
-      - note added/ edited / deleted
-      -
-
-
-Event stream for actions?
- - As long as can also index by item ID
-- materialize Log view by querying
-- materialize i, filtered down by tagged article?
-
-Event{
-- seq_id: int (primary key)
-- device_id: string (device derived, could also be browser_ext, hn_web
-  etc for events we auto-import externally)
-- time: date object (shouldn't need indexed sorted chronologically by seq_id, potentially creat a secondary index)
-- item_id: unique item id site_type_id, like hn_a_1234 for a hacker
-news article (secondary index)
-- article_id: the parent article id, in form hn_a_1234  (secondary index)
-- type: toggle_done, read_time, tag_add, tag_remove, note_edit, write_comment,
-snooze_set, snooze_clear etc
-- data: object. {color: 'r / g / p / o', label: 'Return with Time'},
-{'done': true}, {'comment'}
-}
-
-Event stream is source of truth, but instead of querying it for a
-given item/article, we create a secondary table that is primary keyed
-on article_id with very aggregate info necessary for display (this may
-be held in memory)
-
-ItemStore (build in mem lazily as articles / items loaded)
-- item_id: (hn_c_12345)
-- article_id: (hn_a_1234)
-- tags: tags on specific item
-- snoozed: active snoozes on specific item
-
-ArticleStore (build in mem lazily as articles loaded, aggregate
-sub-items tags and snooze)
-- article_id: (hn_a_1234)
-- done: boolean 
-- tags: tags on article, comments any child
-- snoozed: active snoozes that have not expired
-
-PinnedStore (Persistent so we don't have to read event log for all time)
-- Items that are pinned, not un-pinned
-
-Filter view just read whole event stream and remove down to relevent
-of query params, returning items in infinite scroll liset
-
+Activity log view can be infinite loading, lazy load on query (which
+reads over all log entries and filters)
 
 On startup:
 - sync event stream with server
@@ -116,4 +65,3 @@ On startup:
    that in any upvote activity
 - load news sources
 - build up itemstore for all items by querying persistent EventStore
- - 
