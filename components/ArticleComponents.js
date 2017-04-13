@@ -2,14 +2,15 @@ import React from 'react';
 import {Text, StyleSheet, TouchableOpacity, TouchableHighlight, View} from 'react-native';
 import CraftIcon from '../components/CraftIcon';
 import { FontAwesome } from '@exponent/vector-icons';
+import { PinnedTag, SnoozedTag, NoteTag, ItemTag } from './Tags';
 import Colors from '../constants/Colors';
 import extractDomain from '../utilities/extractDomain';
 
-export function UpVote({article, upvote}) {
+export function UpVote({articleId, upvote}) {
   return (
     <TouchableOpacity
       style={{flexDirection: 'row'}}
-      onPress={() => upvote(article)}
+      onPress={() => upvote(articleId)}
     >
       <CraftIcon
         name='hcr-upvote-filled'
@@ -32,64 +33,24 @@ function firstCoupleWords(text) {
   }
 }
 
-export function ItemStateRow({item}) {
+export function ItemStateRow({item, showPinned = false}) {
   let extras = [];
-  if (item.pinned) {
+  if (item.pinned && showPinned) {
     extras.push(
-      <View key={'pinned'} style={[styles.tag, {backgroundColor: '#FF5722'}]}>
-        <CraftIcon
-          name='hcr-pin'
-          size={12}
-          color={'white'}
-          style={{marginTop: 2, marginLeft: -1}}
-        />
-        <Text style={{fontSize: 12, color: 'white'}}>
-          Pinned
-        </Text>
-      </View>
+      <PinnedTag key={'pinned'} />
     );
   }
   for (let code in item.tags) {
     const tag = item.tags[code];
-    extras.push(
-      <View key={code} style={[styles.tag, {backgroundColor: tag.color}]}>
-        <Text style={{fontSize: 12, color: 'white'}}>
-          {tag.label}
-        </Text>
-      </View>
-    );
+    extras.push(<ItemTag key={code} label={tag.label} color={tag.color} />);
   }
 
   if (item.note) {
     const noteText = firstCoupleWords(item.note);
-    extras.push(
-      <View key={'note'} style={[styles.tag, {backgroundColor: '#3BA8FF'}]}>
-        <FontAwesome
-          name='sticky-note-o'
-          size={12}
-          color={'white'}
-          style={{marginTop: 1, paddingLeft: 1, paddingRight: 2}}
-        />
-        <Text style={{fontSize: 12, color: 'white'}}>
-          {noteText}
-        </Text>
-      </View>
-    );
+    extras.push(<NoteTag key={'note'} label={noteText} />);
   }
   item.activeSnoozed.forEach(snooze => {
-    extras.push(
-      <View key={snooze.label} style={[styles.tag, {backgroundColor: '#FCAB52'}]}>
-        <FontAwesome
-          name='clock-o'
-          size={12}
-          color={'white'}
-          style={{marginTop: 1, paddingLeft: 1, paddingRight: 2}}
-        />
-        <Text style={{fontSize: 12, color: 'white'}}>
-          {snooze.label}
-        </Text>
-      </View>
-    );
+    extras.push(<SnoozedTag key={snooze.label} label={snooze.label} />);
   });
 
   return (
@@ -99,7 +60,7 @@ export function ItemStateRow({item}) {
   );
 }
 
-export function ArticleTitleAndDomain({article}) {
+export function ArticleTitleAndDomain({article, showState = true, showPinned = false}) {
   let domain = extractDomain(article.url);
   if (domain) {
     domain = ` (${domain})`;
@@ -111,18 +72,18 @@ export function ArticleTitleAndDomain({article}) {
   return (
     <View style={{flexDirection: 'column'}}>
       <Text style={[styles.articleTitle, bg]}>
-        {article.text}
+        {article.title}
         <Text style={[styles.articleDomain, bg]}>{domain}</Text>
       </Text>
-      <ItemStateRow item={article} />
+      {showState && <ItemStateRow item={article} showPinned={showPinned} />}
     </View>
   );
 }
 
-export function ArticleRow(props) {
-  const {article, isLast, upvote, openArticle, openComments} = props;
+export function CommentIcon(props) {
+  const {article, openComments} = props;
   const slop = {top: 0, bottom: 0, left: 5, right: 0};
-  const comment = (
+  return (
     <TouchableOpacity
       style={styles.commentIconTouch}
       hitSlop={slop}
@@ -141,6 +102,10 @@ export function ArticleRow(props) {
       </View>
     </TouchableOpacity>
   );
+}
+
+export function ArticleRow(props) {
+  const {article, isLast, upvote, openArticle, openComments} = props;
 
   // I used to color background based on article.done, but not a fan of that currently.
   const bg = {backgroundColor: 'white'};
@@ -153,21 +118,27 @@ export function ArticleRow(props) {
     >
     <View style={styles.rowContainer}>
       <View style={[styles.left, !isLast && styles.bottomBorder]}>
-        <Text style={styles.rankText}>{article.rank}</Text>
+        {article.pinned
+         ? <CraftIcon name='hcr-pin' size={32} color={'#FF5722'} style={{marginLeft: -4}} />
+         : <Text style={styles.rankText}>{article.rank}</Text>
+        }
       </View>
       <View style={[styles.center, !isLast && styles.bottomBorder]}>
         <View style={{flexDirection: 'column'}}>
-          <ArticleTitleAndDomain {...props} />
+          <ArticleTitleAndDomain article={article} />
           <View style={{flexDirection: 'row'}}>
             <Text style={styles.attributes}>{article.when} • </Text>
             <Text style={styles.attributesWithWeight}>{article.points}</Text>
             <Text style={styles.attributes}> • </Text>
-            <UpVote {...props} />
+            <UpVote articleId={article.itemId} upvote={upvote} />
           </View>
         </View>
       </View>
       <View style={[styles.right, !isLast && styles.bottomBorder]}>
-        {comment}
+        <CommentIcon
+          article={article}
+          openComments={openComments}
+        />
       </View>
     </View>
     </TouchableHighlight>
@@ -175,7 +146,7 @@ export function ArticleRow(props) {
   );
 }
 
-export function ArticleHeader(props) {
+export function ArticleHeader({article, openArticle, upvote, showPinned}) {
   let commentIcon = (
     <CraftIcon
       name='hcr-comment'
@@ -189,14 +160,14 @@ export function ArticleHeader(props) {
       <TouchableOpacity
         onPress={() => openArticle(article)}
       >
-        <ArticleTitleAndDomain {...props} />
+        <ArticleTitleAndDomain article={article} showPinned={showPinned} />
       </TouchableOpacity>
       <View style={{flexDirection: 'row'}}>
-        <Text style={styles.attributesWithWeight}>{props.article.author} • </Text>
-        <Text style={styles.attributes}>{props.article.when} • {props.article.descendantsCount} {commentIcon} • </Text>
-        <Text style={styles.attributesWithWeight}>{props.article.points}</Text>
+        <Text style={styles.attributesWithWeight}>{article.author} • </Text>
+        <Text style={styles.attributes}>{article.when} • {article.descendantsCount} {commentIcon} • </Text>
+        <Text style={styles.attributesWithWeight}>{article.points}</Text>
         <Text style={styles.attributes}> • </Text>
-        <UpVote {...props} />
+        <UpVote articleId={article.itemId} upvote={upvote} />
       </View>
     </View>
   );
@@ -240,17 +211,6 @@ const styles = StyleSheet.create({
   articleDomain: {
     color: Colors.secondaryTitle,
     fontSize: 15,
-  },
-  tag: {
-    borderRadius: 3,
-    paddingLeft: 4,
-    paddingRight: 4,
-    paddingTop: 0,
-    paddingBottom: 0,
-    margin: 2,
-    flex: -1,
-    flexDirection: 'row',
-    height: 15,
   },
   attributes: {
     color: Colors.secondaryTitle,

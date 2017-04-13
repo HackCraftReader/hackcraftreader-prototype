@@ -1,9 +1,15 @@
+Next:
+* Tag without filled in for display in Log
+* All events captured and display in Log
+* Support non-articles being pinned
+* Log screen supports navigation to article (click on article) /
+comments otherwise
+* Log screen live filtering
+
 Missing small features:
-* group pinned to top
 * vote turns to unvote
 * vote on comments
-* inbox zero screen
-* events need to capture enough of item do display in notification screen
+* ReadList Zero with unicorn icon
 
 Missing big features:
 * Log screen
@@ -15,6 +21,8 @@ Missing big features:
 * Notifications screen
 * Settings Screen
 
+// try no outline on clear all filters
+
 Upgrades:
 * Expo 15
 * FlatList instead of ListView for Comments / Articles (speed, scroll
@@ -22,7 +30,10 @@ to item support)
  -  - https://github.com/facebook/react-native/blob/0.43-stable/Libraries/CustomComponents/Lists/FlatList.js
  * some solution for 'Done' to close keyboard on notes
  * New react-navigation and react-router for deep-linking (handling
-   links from log / notifications screen)
+ links from log / notifications screen)
+
+* Use react-native-modal for craft modal. Have top-level component
+  with ref passed a prop through component tree
 
 Comments polish:
  * numbers zero, italics not in-line 
@@ -30,8 +41,40 @@ Comments polish:
  * next comment up level scrolls to current comment in parent tree
  (possibly new new experimental scroll view)
 
-
 Persistence with Relay is storying activity log as source of truth.
+
+Data Storage:
+- Event Store, append only write once
+  - Shadow event stores for other devices
+
+"cache" persistence
+ - ArticleCache: For every activity, we store latest meta-info on a article in a
+ ArticleCache persistent layer.
+   - We also have a "lastEvent" timestamp that is indexed and updated
+   for every new event that references the article
+   - Also stores a list of seqIds of EventStore items that ref
+   this. Can ref seqIds of shadow event stores from other devices, so
+   this integrates our mutli-device event streams into a single Log view
+   - Log screen queries this cache by by sorted orfer of "lastEvent",
+   looks up EventStore items to construct article groups
+   - If we sync across devices, only trick is having having EventStore
+     items that are not able to populate ArticleCache. Potentially
+     EventStore items actually persist the ArticleCache data, or we
+     sync the referenced ArticleCache items when we sync EventStore
+     items (i.e. a second table with ref items).
+
+The activity log relies on this to
+   display article-level data. Any new activity formed on even older
+   articles refreshes by nature of opening a article, and will update
+   the cache with its latest activity. Also used by active snooze,
+   snooze notiications etc.
+ - FeedCache: Top and by Day feeds are stored as fully resolved
+   caches. Opening the app displays last cached feed while new one is
+   being fetched. This is easy to override as always out of date. This
+   may not be necessary...
+ - Don't persistent comments / article web data. That is only cached
+   in memory, each comment screen load pulls those live (using in-mem
+   cache if available)
 
 We lazy load for each item bieng read whether it was in the activity
 log (by item key) into memory.
@@ -51,7 +94,8 @@ Activity log view can be infinite loading, lazy load on query (which
 reads over all log entries and filters)
 
 On startup:
-- sync event stream with server
+- sync event stream (with corresponding article cache entries of
+  synced events) with server
  - could pull in EventStore from other devices
  - Could be notified of comment sections being "watched" that could
    influence notifications. Mostly just articles you posted or ones

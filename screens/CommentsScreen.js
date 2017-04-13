@@ -303,7 +303,7 @@ export default class CommentsScreen extends React.Component {
   constructor(props) {
     super(props);
     const { itemId } = this.props.route.params;
-    this.article = this.props.ItemStore.item(itemId);
+    this.article = this.props.ItemStore.lookupItem(itemId);
     let state = {
       level: {},
       collapsable: {},
@@ -338,6 +338,8 @@ export default class CommentsScreen extends React.Component {
 
   popArticleNav() {
     const rootNav = this.props.navigation.getNavigator('root');
+    const { updateCallback } = this.props.route.params;
+    updateCallback && updateCallback();
     rootNav.pop();
   }
 
@@ -394,7 +396,14 @@ export default class CommentsScreen extends React.Component {
 
   _renderRow = (rowData) => {
     if (rowData.article) {
-      return <ArticleHeader {...rowData} />;
+      return (
+        <ArticleHeader
+          article={rowData.article}
+          openArticle={() => this._switchToArticle()}
+          upvote={this._upvoteArticle}
+          showPinned
+        />
+      );
     }
     else if (rowData.actions){
       return <CommentActions {...rowData} />;
@@ -586,7 +595,13 @@ export default class CommentsScreen extends React.Component {
 
   _upvoteComment = (commentId) => {
     // TODO: change state
-    ItemStore.item(commentId).upvote();
+    ItemStore.lookupItem(commentId).upvote();
+    this.setState({});
+  }
+
+  _upvoteArticle = (articleId) => {
+    // TODO: change state
+    ItemStore.lookupItem(articleId).upvote();
     this.setState({});
   }
 

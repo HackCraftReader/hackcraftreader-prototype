@@ -25,6 +25,7 @@ export default {
 
   inputBackground: '#F5F5F5',
   inputBorder: '#E0E0E0',
+  inputText: '#7B7B7B',
 
   outline: '#95989A',
 
@@ -49,6 +50,10 @@ export default {
   commentHeader: '#BF223F',
   commentHeaderOP: '#3985B8',
   commentPreBackground: '#F7F7F7',
+
+  note: '#3BA8FF',
+  snoozed: '#FCAB52',
+  pinned: '#FF5722',
 
   optionsBackround: '#4D394B',
   optionsHeaderBackground: '#413040',

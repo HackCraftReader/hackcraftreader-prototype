@@ -4,24 +4,50 @@ import { observable, action, computed } from 'mobx';
 
 import EventStore, {Event} from './EventStore';
 
+import PinnedStore from './PinnedStore';
+
 import {Snooze} from '../components/Snooze';
 
 class ItemStore {
   @observable items = observable.map();
 
-  item(itemId) {
+  article(itemId) {
     if (this.items.has(itemId)) {
       return this.items.get(itemId);
     } else {
-      const item = new Item(this, itemId);
+      const item = new Item(this, itemId, itemId);
       this.items.set(itemId, item);
       return item;
     }
+  }
+
+  comment(itemId, articleId) {
+    if (this.items.has(itemId)) {
+      return this.items.get(itemId);
+    } else {
+      const item = new Item(this, itemId, articleId);
+      this.items.set(itemId, item);
+      return item;
+    }
+  }
+
+  lookupItem(itemId) {
+    // Expect item exists
+    const item = this.items.get(itemId);
+    if (!item) {
+      console.error('Unable to find itemId in store: ' + itemId);
+    }
+    return item;
+  }
+
+  cachedItem(itemId) {
+    return this.items.get(itemId);
   }
 }
 
 class Item {
   itemId; // global item ID
+  articleId;
   store; // ref back to ItemStore
 
   // Derived dtaa
@@ -48,9 +74,10 @@ class Item {
   @observable pinned = false;
   @observable note = '';
 
-  constructor(store, itemId) {
+  constructor(store, itemId, articleId) {
     this.store = store;
     this.itemId = itemId;
+    this.articleId = articleId;
   }
 
   @action doneToggle() {
@@ -158,17 +185,19 @@ class Item {
   }
 
   @action pinSet() {
+    PinnedStore.pinItem(this.itemId);
     this.newEvent(Event.PinnedSet, {});
     this.pinned = true;
   }
 
   @action pinClear() {
+    PinnedStore.unpinItem(this.itemId);
     this.newEvent(Event.PinnedClear, {});
     this.pinned = false;
   }
 
   newEvent(type, data) {
-    EventStore.add(this.itemId, type, data);
+    EventStore.add(this.itemId, this.articleId, type, data);
   }
 }
 

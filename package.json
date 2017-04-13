@@ -11,9 +11,9 @@
     "preset": "jest-exponent"
   },
   "dependencies": {
-    "@exponent/ex-navigation": "~2.1.7",
+    "@exponent/ex-navigation": "~2.9.1",
     "@exponent/samples": "~1.0.2",
-    "@exponent/vector-icons": "~2.0.3",
+    "@exponent/vector-icons": "~4.0.0",
     "cheerio-without-node-native": "^0.20.2",
     "exponent": "^14.0.0",
     "mobx": "^3.1.7",
@@ -23,6 +23,7 @@
     "react-native": "https://github.com/exponent/react-native/archive/sdk-14.0.0.tar.gz",
     "react-native-drawer-layout": "^1.1.0",
     "react-native-material-switch": "github:kesha-antonov/react-native-material-switch",
+    "react-native-popup-menu": "^0.7.3",
     "react-native-swipe-list-view": "^0.3.3",
     "url-parse": "^1.1.7"
   },

@@ -65,7 +65,7 @@ export default class ActionScreen extends React.Component {
   constructor(props) {
     super(props);
     const { itemId, updateCallback } = this.props.route.params;
-    const item = this.props.ItemStore.item(itemId);
+    const item = this.props.ItemStore.lookupItem(itemId);
     const noteText = item.note;
     this.state = {noteText, item, updateCallback};
   }

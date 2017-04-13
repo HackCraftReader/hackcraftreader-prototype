@@ -17,7 +17,7 @@ function countComments(comments) {
 
 function itemForArticle(articleId) {
   const itemId = 'hn_a_' + articleId;
-  let $item = ItemStore.item(itemId);
+  let $item = ItemStore.article(itemId);
   return $item;
 }
 
@@ -25,6 +25,7 @@ let childrenStore = {};
 
 function loadHNTopArticles() {
   var top = require('./hackernews/topStories.json');
+  const delta = moment().unix() - Number(StoriesMeta.now_i);
 
   const articles = top.map((article, index) => {
     let item = itemForArticle(article.id);
@@ -32,10 +33,11 @@ function loadHNTopArticles() {
     item.source = 'HN';
     item.descendantsCount = countComments(article);
     item.when = moment(article.created_at_i * 1000).from(Number(StoriesMeta.now_i * 1000));
-    item.created = new Date(article.created_at_i * 1000);
+    item.created = moment(article.created_at_i + delta, 'X');
     item.url = article.url;
     item.author = article.author;
-    item.text = article.title;
+    item.title = article.title;
+    // item.text set for Ask HN type posts
     item.points = article.points;
     item.author = article.author;
 
@@ -49,11 +51,12 @@ function loadHNTopArticles() {
 
 function convertCommentsToItems(comments) {
   return comments.filter(c => c.type === 'comment').map(comment => {
-    let itemId = 'hn_c_' + comment.id;
+    const itemId = 'hn_c_' + comment.id;
+    const articleId = 'hn_a_' + comment.story_id;
     let parentId = comment.parent_id === comment.story_id
-                 ? 'hn_a_' + comment.story_id
+                 ? articleId
                  : 'hn_c_' + comment.parent_id;
-    let item = ItemStore.item(itemId);
+    let item = ItemStore.comment(itemId, articleId);
     item.created = new Date(comment.created_at_i * 1000);
     item.parentItemId = parentId;
     item.type = 'comment';
@@ -78,6 +81,7 @@ function loadComments(article) {
 export {
   StoriesMeta,
   loadHNTopArticles,
-  loadComments
+  loadComments,
+  itemForArticle,
 };
 

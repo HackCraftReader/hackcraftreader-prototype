@@ -48,7 +48,7 @@ export default class BrowserScreen extends React.Component {
   constructor(props) {
     super(props);
     const { itemId } = this.props.route.params;
-    this.article = this.props.ItemStore.item(itemId);
+    this.article = this.props.ItemStore.lookupItem(itemId);
     const childrenCount = this.article.descendantsCount;
     const domain = extractDomain(this.props.url);
     this.bgColor = Colors.hcrBackground;
@@ -95,6 +95,8 @@ export default class BrowserScreen extends React.Component {
 
   popArticleNav() {
     const rootNav = this.props.navigation.getNavigator('root');
+    const cb = this.props.route.params.updateCallback;
+    cb && cb();
     rootNav.pop();
   }
 

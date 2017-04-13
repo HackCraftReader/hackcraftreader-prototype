@@ -5,6 +5,7 @@ import {
 import ArticlesScreen from '../screens/ArticlesScreen';
 import CommentsScreen from '../screens/CommentsScreen';
 import BrowserScreen from '../screens/BrowserScreen';
+import LogScreen from '../screens/LogScreen';
 
 import ActionScreen from '../screens/ActionScreen';
 
@@ -14,7 +15,6 @@ import ActionScreen from '../screens/ActionScreen';
 //import MoreScreen from '../screens/MoreScreen';
 
 // TODO: Remove/replace
-import HomeScreen from '../screens/HomeScreen';
 import LinksScreen from '../screens/LinksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
@@ -29,7 +29,7 @@ const routerOption = {
 export default createRouter(() => ({
   top: () => ArticlesScreen,
   byday: () => ArticlesScreen,
-  log: () => HomeScreen,
+  log: () => LogScreen,
   notifications: () => LinksScreen,
   more: () => SettingsScreen,
   rootNavigation: () => RootNavigation,

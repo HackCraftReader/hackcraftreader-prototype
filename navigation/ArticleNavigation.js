@@ -13,30 +13,28 @@ import Router from '../navigation/Router';
 export default class ArticleNavigation extends React.Component {
 
   render() {
-    const initialTab = this.props.route.params.screen;
-    const itemId = this.props.route.params.itemId;
-    const url = this.props.route.params.url;
+    const {screen, itemId, url, updateCallback} = this.props.route.params;
     return (
 
       <TabNavigation
         ref={(tabs) => { this._tabs = tabs; }}
         id='articleNav'
         tabBarHeight={0}
-        initialTab={initialTab}
+        initialTab={screen}
         renderTabBar={(props) => <View />}
       >
         <TabNavigationItem id='article'>
           <StackNavigation
             id='browserNav'
             initialRoute={
-              Router.getRoute('browser', {itemId, url})}
+              Router.getRoute('browser', {itemId, url, updateCallback})}
           />
         </TabNavigationItem>
 
         <TabNavigationItem id='comments'>
           <StackNavigation
             id='commentsNav'
-            initialRoute={Router.getRoute('comments', {itemId})}
+            initialRoute={Router.getRoute('comments', {itemId, updateCallback})}
           />
         </TabNavigationItem>
       </TabNavigation>

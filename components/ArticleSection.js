@@ -14,10 +14,17 @@ export default class ArticleSection extends React.Component {
     return (
       <View style={styles.container}>
         <Text style={styles.sectionText}>
-          <FontAwesome
-            name={iconName}
-            size={16}
-          />
+          {iconName.startsWith('hcr') ?
+           <CraftIcon
+             name={iconName}
+             size={16}
+           />
+           :
+           <FontAwesome
+             name={iconName}
+             size={16}
+           />
+          }
           {' ' + title}
         </Text>
         <TouchableOpacity onPress={() => this.props.checkAll(this.props.section)}>

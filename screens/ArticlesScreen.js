@@ -31,6 +31,7 @@ import * as mobx from 'mobx';
 import {loadHNTopArticles} from '../assets/Stories';
 
 import ItemStore from '../store/ItemStore';
+import PinnedStore from '../store/PinnedStore';
 
 import Router from '../navigation/Router';
 
@@ -148,7 +149,6 @@ const BYDAY_GROUP_COUNT = {
 // @observer(['FeedStore', 'ItemStore'])
 @inject('ItemStore')
 @observer
-@createFocusAwareComponent
 @withNavigation
 export default class ArticlesScreen extends React.Component {
   static route = {
@@ -252,15 +252,6 @@ export default class ArticlesScreen extends React.Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.isFocused && !this.props.isFocused) { //becomes focused
-      console.log('become focused');
-      this.setState({});
-    } else if (!nextProps.isFocused && this.props.isFocused) { //becomes unfocused
-      console.log('loose focused');
-    }
-  }
-
   _toggleOptions = () => {
     this._optionsDrawer.toggle();
   }
@@ -281,7 +272,7 @@ export default class ArticlesScreen extends React.Component {
 
   _checkAll = ({itemIds}) => {
     itemIds.forEach(itemId => {
-      const item = ItemStore.item(itemId);
+      const item = ItemStore.lookupItem(itemId);
       if (!item.done) {
         item.doneSet();
       }
@@ -289,8 +280,8 @@ export default class ArticlesScreen extends React.Component {
     this.setState({});
   }
 
-  _upvoteArticle = article => {
-    ItemStore.item(article.itemId).upvote();
+  _upvoteArticle = articleId => {
+    ItemStore.lookupItem(articleId).upvote();
     this.setState({});
   }
 
@@ -311,13 +302,13 @@ export default class ArticlesScreen extends React.Component {
 
   _openArticle = article => {
     const rootNav = this.props.navigation.getNavigator('root');
-    const routeParams = {'screen': 'article', itemId: article.itemId, url: article.url};
+    const routeParams = {'screen': 'article', itemId: article.itemId, url: article.url, updateCallback: this._updateArticleList};
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
   _openComments = article => {
     const rootNav = this.props.navigation.getNavigator('root');
-    const routeParams = {'screen': 'comments', itemId: article.itemId, url: article.url};
+    const routeParams = {'screen': 'comments', itemId: article.itemId, url: article.url, updateCallback: this._updateArticleList};
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
@@ -332,18 +323,31 @@ export default class ArticlesScreen extends React.Component {
           { 'isSection': true,
             'title': `${title} ${idx + 1}-${idx + groupSize}`,
             'iconName': 'y-combinator-square',
-            'rangeStart': idx,
-            'rangeEnd': idx + groupSize,
             'itemIds': []
           };
         groupedArticles.push(curGroup);
       }
-      if (!showDone || !article.done) {
+      if ((!showDone || !article.done) && !article.pinned) {
         groupedArticles.push(article);
         curGroup.itemIds.push(article.itemId);
       }
     });
     if (groupedArticles.length > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
+    if (PinnedStore.count > 0) {
+      curGroup =
+      { 'isSection': true,
+        'title': `Pinned`,
+        'iconName': 'hcr-pin',
+        'itemIds': []
+      };
+      PinnedStore.pinnedItems.reverse().forEach(item => {
+        groupedArticles.push(item);
+        curGroup.itemIds.push(item.itemId);
+        groupedArticles.unshift(item);
+      });
+      if (groupedArticles.length > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
+      groupedArticles.unshift(curGroup);
+    }
     return groupedArticles;
   }
 
@@ -387,6 +391,7 @@ function SwipeActions({article, check, craft, close}) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.screenBase,
     //paddingTop: 15,
   },
   filterSwitchContainer: {
