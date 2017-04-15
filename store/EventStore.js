@@ -14,9 +14,9 @@ export const Event = {
   NoteEdit: 'note_edit',
   TagAdd: 'tag_add',
   TagRemove: 'tag_remove',
-  SnoozeSet: 'snooze_clear',
+  SnoozeSet: 'snooze_set',
   SnoozeClear: 'snooze_clear',
-  PinnedSet: 'pinned_clear',
+  PinnedSet: 'pinned_set',
   PinnedClear: 'pinned_clear',
   DoneSet: 'done_set',
   DoneClear: 'done_clear',
@@ -46,7 +46,7 @@ class EventStore {
     //    }
     // TODO: remove articleData ? Relying on ItemStore cache on articleId for now
     ArticleStore.addOrUpdate(articleId, articleData, this.storeId, seqId, time);
-    console.log(this.events[this.events.length - 1]);
+    // console.log(this.events[this.events.length - 1]);
   }
 }
 

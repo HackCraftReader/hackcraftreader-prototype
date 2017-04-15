@@ -1,10 +1,13 @@
 Next:
 * Tag without filled in for display in Log
-* All events captured and display in Log
+* All events captured and display in Log (All event types)
 * Support non-articles being pinned
 * Log screen supports navigation to article (click on article) /
 comments otherwise
 * Log screen live filtering
+* Row with summary
+  - Article: of article tags, comment tags, and down arrow to expand
+  - Comments:  
 
 Missing small features:
 * vote turns to unvote
@@ -40,6 +43,7 @@ Comments polish:
  * (in German):\n<a href showing on one line...
  * next comment up level scrolls to current comment in parent tree
  (possibly new new experimental scroll view)
+ * 1 events on 1 comments => 1 event on 1 comment (make s only for > 1)
 
 Persistence with Relay is storying activity log as source of truth.
 
@@ -51,7 +55,9 @@ Data Storage:
  - ArticleCache: For every activity, we store latest meta-info on a article in a
  ArticleCache persistent layer.
    - We also have a "lastEvent" timestamp that is indexed and updated
-   for every new event that references the article
+   for every new event that references the article (used for sorting)
+   - When loading article list, if article not in cache, query log for
+     this article id to populate its state
    - Also stores a list of seqIds of EventStore items that ref
    this. Can ref seqIds of shadow event stores from other devices, so
    this integrates our mutli-device event streams into a single Log view
@@ -77,7 +83,8 @@ The activity log relies on this to
    cache if available)
 
 We lazy load for each item bieng read whether it was in the activity
-log (by item key) into memory.
+log (by article key) into memory. But once an item is in mem, the mem
+is single source of truth
 
 May need specialized stores for:
 - Active Snoozes

@@ -2,7 +2,7 @@ import React from 'react';
 import {Text, StyleSheet, TouchableOpacity, TouchableHighlight, View} from 'react-native';
 import CraftIcon from '../components/CraftIcon';
 import { FontAwesome } from '@exponent/vector-icons';
-import { PinnedTag, SnoozedTag, NoteTag, ItemTag } from './Tags';
+import { PinnedTag, SnoozedTag, NoteTag, ItemTag, tagByCode } from './Tags';
 import Colors from '../constants/Colors';
 import extractDomain from '../utilities/extractDomain';
 
@@ -55,6 +55,28 @@ export function ItemStateRow({item, showPinned = false}) {
 
   return (
     <View style={{flexWrap: 'wrap', flexDirection: 'row'}}>
+      {extras}
+    </View>
+  );
+}
+
+export function AggStateRow({tags}) {
+  let extras = [];
+  tags.forEach(tag => {
+    if (tag.type === 'pin') {
+      extras.push(<PinnedTag key={'pinned'} />);
+    } else if (tag.type === 'item') {
+      const color = tagByCode(tag.code).color;
+      extras.push(<ItemTag key={tag.code} label={tag.label} color={color} />);
+    } else if (tag.type === 'note') {
+      const noteText = firstCoupleWords(tag.note);
+      extras.push(<NoteTag key={'note'} label={noteText} />);
+    } else if (tag.type === 'snooze') {
+      extras.push(<SnoozedTag key={tag.label} label={tag.label} />);
+    }
+  });
+  return (
+    <View style={{flexWrap: 'wrap', flexDirection: 'row', paddingTop: 3}}>
       {extras}
     </View>
   );

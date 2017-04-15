@@ -170,10 +170,18 @@ export function FilterNote({toggled}) {
   );
 }
 
-export function ItemTag({label, color}) {
+export function ItemTag({label, color, toggled = true}) {
+  var tagStyle = {
+    borderColor: color,
+    borderWidth: StyleSheet.hairlineWidth,
+  };
+  if (toggled) {
+    tagStyle.backgroundColor = color;
+  }
+  var textColor = toggled ? 'white' : color;
   return (
-    <View style={[styles.tag, {backgroundColor: color}]}>
-      <Text style={{fontSize: 12, color: 'white'}}>
+    <View style={[styles.tag, tagStyle]}>
+      <Text style={{fontSize: 12, color: textColor}}>
         {label}
       </Text>
     </View>

@@ -35,7 +35,7 @@ function CommentBlock({text}) {
 }
 
 function EventRow(props) {
-  const {openEvent} = props;
+  const {openEvent, event} = props;
   return (
     <View style={styles.eventContainer}>
       <TouchableHighlight
@@ -72,7 +72,7 @@ export default function EventItem({event, openEvent}) {
     const descendantsCount = item ? item.descendantsCount : event.data.descendantsCount;
 
     return (
-      <EventRow openEvent={openEvent}>
+      <EventRow openEvent={openEvent} event={event}>
         <Text style={styles.text}>
           {t} {wasComment && <Text style={styles.author}>{event.data.author}</Text>}
         </Text>
@@ -108,7 +108,7 @@ export default function EventItem({event, openEvent}) {
     return (
       <EventRow openEvent={openEvent}>
         <View style={{flexDirection: 'row'}}>
-          <ItemTag label={event.data.label} color={tag.color} />
+          <ItemTag label={event.data.label} color={tag.color} toggled={added} />
           <Text style={styles.text}>
             {' tag ' + action + on}
           </Text>
@@ -118,13 +118,11 @@ export default function EventItem({event, openEvent}) {
         </Text>
       </EventRow>
     );
-    //SnoozeSet: 'snooze_clear',
-//            SnoozeClear: 'snooze_clear',
-//            PinnedSet: 'pinned_clear',
-//            PinnedClear: 'pinned_clear',
-//            DoneSet: 'done_set',
-//            DoneClear: 'done_clear',
-
+  } else if (event.type === Event.SnoozeSet || event.type === Event.SnoozeClear) {
+    return <View/>;
+  } else if (event.type === Event.PinnedSet || event.type === Event.PinnedClear) {
+    return <View/>;
+  } else if (event.type === Event.DoneSet || event.type === Event.DoneClear) {
   } else {
     console.warn('unkown event type: ' + event.type);
     return <View/>;
@@ -133,7 +131,7 @@ export default function EventItem({event, openEvent}) {
 
 const styles = StyleSheet.create({
   eventContainer: {
-    backgroundColor: 'white'
+    backgroundColor: Colors.inputBackground,
   },
   eventItem: {
     paddingLeft: 40,
@@ -166,8 +164,10 @@ const styles = StyleSheet.create({
   },
 
   commentBlock: {
+    borderColor: Colors.inputBorder,
+    borderWidth: 1,
     borderRadius: 3,
-    backgroundColor: Colors.inputBackground,
+    backgroundColor: 'white',
     padding: 8,
     marginTop: 5,
     marginBottom: 5,

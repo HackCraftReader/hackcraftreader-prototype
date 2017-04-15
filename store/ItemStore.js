@@ -132,7 +132,8 @@ class Item {
   }
 
   @action setNote(note) {
-    this.newEvent(Event.NoteEdit, {note});
+    const newNote = !this.note;
+    this.newEvent(newNote ? Event.NoteAdd : Event.NoteEdit, {note});
     this.note = note;
   }
 

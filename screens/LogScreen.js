@@ -24,13 +24,14 @@ import relativeDayName from '../utilities/relativeDayName';
 
 import {Tags, FilterTag, FilterNote, TagButton, NoteButton} from '../components/Tags';
 import EventItem from '../components/EventItem';
+import EventAggItem from '../components/EventAggItem';
 import EventArticleHeader from '../components/EventArticleHeader';
 
 import {observer, inject} from 'mobx-react/native';
 
 import {loadHNTopArticles} from '../assets/Stories';
 
-import EventStore from '../store/EventStore';
+import EventStore, {Event} from '../store/EventStore';
 import ArticleStore from '../store/ArticleStore';
 import ItemStore from '../store/ItemStore';
 
@@ -39,6 +40,48 @@ import { SearchBar } from 'react-native-elements';
 import { Ionicons } from '@exponent/vector-icons';
 
 const TAGS = [Tags.TagPurple, Tags.TagOrange, Tags.TagRed, Tags.TagGreen];
+
+function aggregateEvents(events) {
+  let timeSpent = 0;
+  let tags = [];
+  let haveSeen = {};
+  let commentIds = {};
+  events.forEach(event => {
+    if (event.type === 'time_spent') {
+      timeSpent += event.data.spent;
+    }
+    if (event.type.startsWith('note_') && !haveSeen['note']) {
+      haveSeen['note'] = true;
+      if (event.type === 'note_add') {
+        tags.push({type: 'note', note: event.data.note});
+      }
+    }
+    if (event.type.startsWith('tag_') && !haveSeen['tag']) {
+      haveSeen['tag'] = true;
+      if (event.type === 'tag_add') {
+        tags.push({type: 'item', code: event.data.code, label: event.data.label});
+      }
+    }
+    if (event.type.startsWith('snooze_') && !haveSeen['snooze']) {
+      haveSeen['snooze'] = true;
+      if (event.type === 'snooze_set') {
+        tags.push({type: 'snooze', label: event.data.label});
+      }
+    }
+    if (event.type.startsWith('pinned_') && !haveSeen['pinned']) {
+      haveSeen['pinned'] = true;
+      if (event.type === 'pinned_set') {
+        tags.push({type: 'pin'});
+      }
+    }
+    const wasOnComment = event.itemId !== event.articleId;
+    if (wasOnComment) {
+      commentIds[event.itemId] = event.itemId;
+    }
+  });
+  const uniqueComments = Object.keys(commentIds).length;
+  return {timeSpent, tags, uniqueComments};
+}
 
 @inject('ItemStore')
 @observer
@@ -60,6 +103,7 @@ export default class LogScreen extends React.Component {
     this.state = {
       inSearch: false,
       tagFilters: [],
+      isExpanded: {},
     };
   }
 
@@ -268,7 +312,6 @@ export default class LogScreen extends React.Component {
 
   _logList() {
     const listData = {};
-    const rowIdentities = [];
 
     ArticleStore.sorted.forEach(article => {
       let totalTimeSpent = 0;
@@ -292,12 +335,70 @@ export default class LogScreen extends React.Component {
         articleItem: articleItem,
         timeSpent: totalTimeSpent
       });
-      rowIdentities.push(articleItem.articleId);
+      let articleEvents = [];
+      let commentEvents = [];
       article.events.forEach(([seqId, storeId]) => {
         const event = EventStore.bySeqId(seqId);
-        listData[section].push(event);
-        rowIdentities.push(seqId + '_' + storeId);
+        if (event.type !== Event.DoneSet && event.type !== Event.DoneClear) {
+          const wasOnComment = event.itemId !== event.articleId;
+          if (wasOnComment) {
+            commentEvents.push(event);
+          } else {
+            articleEvents.push(event);
+          }
+        }
       });
+
+      // TODO: refactor to function or inline func and do for commentEvents as well
+      if (articleEvents.length > 0) {
+        // Add aggregate node
+        const minTime = articleEvents[0].time;
+        const maxTime = articleEvents[articleEvents.length - 1].time;
+        const {timeSpent, tags} = aggregateEvents(articleEvents);
+        const id = 'article_events_' + article.articleId;
+        const expanded = !!this.state.isExpanded[id];
+        listData[section].push({
+          id,
+          type: 'agg_article_events',
+          articleItem: articleItem,
+          timeSpent: timeSpent,
+          eventCount: articleEvents.length,
+          tags,
+          minTime,
+          maxTime,
+          expanded,
+        });
+        if (expanded) {
+          articleEvents.forEach(event => {
+            listData[section].push(event);
+          });
+        }
+      }
+      if (commentEvents.length > 0) {
+        // Add aggregate node
+        const minTime = commentEvents[0].time;
+        const maxTime = commentEvents[commentEvents.length - 1].time;
+        const {timeSpent, tags, uniqueComments} = aggregateEvents(commentEvents);
+        const id = 'comment_events_' + article.articleId;
+        const expanded = !!this.state.isExpanded[id];
+        listData[section].push({
+          id,
+          type: 'agg_comment_events',
+          articleItem: articleItem,
+          timeSpent: timeSpent,
+          eventCount: commentEvents.length,
+          uniqueComments,
+          tags,
+          minTime,
+          maxTime,
+          expanded,
+        });
+        if (expanded) {
+          commentEvents.forEach(event => {
+            listData[section].push(event);
+          });
+        }
+      }
     });
     this.lastListData = listData;
     return this.ds.cloneWithRowsAndSections(listData);
@@ -311,6 +412,14 @@ export default class LogScreen extends React.Component {
           key={sectionId + rowId}
           event={rowData}
           article={article}
+        />
+      );
+    } else if (rowData.type.startsWith('agg_')) {
+      return (
+        <EventAggItem
+          key={sectionId + rowId}
+          event={rowData}
+          toggleExpand={() => this._toggleExpand(rowData.id)}
         />
       );
     } else {
@@ -349,6 +458,17 @@ export default class LogScreen extends React.Component {
         <View style={styles.bottomBorder} />
       </View>
     );
+  }
+
+  _toggleExpand = (expandId) => {
+    const expanded = !!this.state.isExpanded[expandId];
+
+    this.setState({
+      isExpanded: {
+        ...this.state.isExpanded,
+        [expandId]: !expanded
+      }
+    });
   }
 }
 
