@@ -292,7 +292,15 @@ export default class ArticlesScreen extends React.Component {
 
   _craftArticle = article => {
     const commentNav = this.props.navigation.getNavigator('root');
-    const actionParams = {type: 'article', itemId: article.itemId, updateCallback: this._updateArticleList};
+    // We use comments context from article list, meaning in Log,
+    // this event takes you to the comments screen first.
+    const context = {on: 'comments'};
+    const actionParams = {
+      type: 'article',
+      itemId: article.itemId,
+      updateCallback: this._updateArticleList,
+      context
+    };
     commentNav.push(Router.getRoute('action', actionParams));
   }
 

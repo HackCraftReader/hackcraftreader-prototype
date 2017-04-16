@@ -63,4 +63,46 @@ export default [
       on: 'article',
     }
   },
+  {
+    itemId: 'hn_a_13185759',
+    articleId: 'hn_a_13185759',
+    type: 'time_spent',
+    time: moment().subtract(1.4, 'days').unix(),
+    data: {
+      spent: 210,
+      on: 'comments',
+    }
+  },
+  {
+    itemId: 'hn_c_13191682',
+    articleId: 'hn_a_13185759',
+    type: 'pinned_clear',
+    time: moment().subtract(1.45, 'days').unix(),
+    data: {
+      author: 'PudgePacket',
+      descendantsCount: 0,
+    }
+  },
+  {
+    itemId: 'hn_c_13191682',
+    articleId: 'hn_a_13185759',
+    type: 'pinned_set',
+    time: moment().subtract(1.5, 'days').unix(),
+    data: {
+      author: 'PudgePacket',
+      descendantsCount: 0,
+    }
+  },
+  {
+    itemId: 'hn_c_13189654',
+    articleId: 'hn_a_13185759',
+    type: 'snooze_set',
+    time: moment().subtract(1.5, 'days').unix(),
+    data: {
+      date: "2017-04-22T13:30:00.000Z",
+      label: 'Weekend',
+      author: 'swat17',
+      descendantsCount: 1,
+    }
+  },
 ];

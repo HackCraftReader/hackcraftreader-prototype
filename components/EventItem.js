@@ -63,23 +63,49 @@ function EventRow(props) {
 
 export default function EventItem({event, openEvent}) {
   const when = moment(event.time, 'X').from(moment());
-  if (event.type === Event.NoteAdd || event.type === Event.NoteEdit) {
-    let t = event.type === Event.NoteAdd ? 'Added note to ' : 'Edited note on ';
-    const wasComment = event.itemId !== event.articleId;
-    t += wasComment ? 'comment by' : 'article';
-
+  const added = event.type.includes('add') || event.type.includes('set');
+  /* Don't do this extra verbage...
+  let action = '';
+  if (event.type.includes('add')) {
+    action = 'added to ';
+  } else if (event.type.includes('set')) {
+    action = 'set on ';
+  } else if (event.type.includes('remove')) {
+    action = 'removed from ';
+  } else if (event.type.includes('clear')) {
+    action = 'cleared on ';
+  }
+  */
+  const wasComment = event.itemId !== event.articleId || event.data.on === 'comments';
+  let on;
+  let author = null;
+  let descendantsCount = 0;
+  if (wasComment) {
+    if (event.itemId !== event.articleId) {
+      on = 'comment by';
+      author = <Text style={styles.author}>{event.data.author}</Text>;
+    } else {
+      on = 'comments';
+    }
     const item = ItemStore.cachedItem(event.itemId);
-    const descendantsCount = item ? item.descendantsCount : event.data.descendantsCount;
+    descendantsCount = item ? item.descendantsCount : event.data.descendantsCount;
+  } else {
+    on = 'article';
+  }
 
+  // TODO: Rectar a container pure component for more code use
+  if (event.type === Event.NoteAdd || event.type === Event.NoteEdit) {
+    let t = added ? 'Added note to ' : 'Edited note on ';
+    t += on;
     return (
       <EventRow openEvent={openEvent} event={event}>
         <Text style={styles.text}>
-          {t} {wasComment && <Text style={styles.author}>{event.data.author}</Text>}
+          {t} {author}
         </Text>
         <CommentBlock text={event.data.note} />
         <Text style={styles.attributes}>
           {when}
-          {wasComment && (' • ' + descendantsCount + ' replies')}
+          {(descendantsCount > 0) && (' • ' + descendantsCount + ' replies')}
         </Text>
       </EventRow>
     );
@@ -91,7 +117,7 @@ export default function EventItem({event, openEvent}) {
     return (
       <EventRow openEvent={openEvent}>
         <Text style={styles.text}>
-          {spent + ' on ' + event.data.on}
+          {spent + ' spent reading ' + event.data.on}
         </Text>
         <Text style={styles.attributes}>
           {when}
@@ -99,33 +125,55 @@ export default function EventItem({event, openEvent}) {
       </EventRow>
     );
   } else if (event.type === Event.TagAdd || event.type === Event.TagRemove) {
-    const added = event.type === Event.TagAdd;
-    const action = added ? 'added to ' : 'removed from ';
-    const wasComment = event.itemId !== event.articleId;
-    const on = wasComment ? 'comment' : 'article';
-    // TODO: look up by code and allow ItemTag to be not "on";
     const tag = tagByCode(event.data.code);
     return (
       <EventRow openEvent={openEvent}>
-        <View style={{flexDirection: 'row'}}>
+        <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
           <ItemTag label={event.data.label} color={tag.color} toggled={added} />
           <Text style={styles.text}>
-            {' tag ' + action + on}
+            {' → ' + on} {author}
           </Text>
         </View>
         <Text style={styles.attributes}>
           {when}
+          {(descendantsCount > 0) && (' • ' + descendantsCount + ' replies')}
         </Text>
       </EventRow>
     );
   } else if (event.type === Event.SnoozeSet || event.type === Event.SnoozeClear) {
-    return <View/>;
+    return (
+      <EventRow openEvent={openEvent}>
+        <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
+          <SnoozedTag label={event.data.label} toggled={added} />
+          <Text style={styles.text}>
+            {' → ' + on} {author}
+          </Text>
+        </View>
+        <Text style={styles.attributes}>
+          {when}
+          {(descendantsCount > 0) && (' • ' + descendantsCount + ' replies')}
+        </Text>
+      </EventRow>
+    );
   } else if (event.type === Event.PinnedSet || event.type === Event.PinnedClear) {
-    return <View/>;
+    return (
+      <EventRow openEvent={openEvent}>
+        <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
+          <PinnedTag toggled={added} />
+          <Text style={styles.text}>
+            {' → ' + on} {author}
+          </Text>
+        </View>
+        <Text style={styles.attributes}>
+          {when}
+          {(descendantsCount > 0) && (' • ' + descendantsCount + ' replies')}
+        </Text>
+      </EventRow>
+    );
   } else if (event.type === Event.DoneSet || event.type === Event.DoneClear) {
   } else {
     console.warn('unkown event type: ' + event.type);
-    return <View/>;
+    return <View />;
   }
 }
 

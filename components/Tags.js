@@ -188,16 +188,24 @@ export function ItemTag({label, color, toggled = true}) {
   );
 }
 
-export function PinnedTag() {
+export function PinnedTag({toggled = true}) {
+  var tagStyle = {
+    borderColor: Colors.pinned,
+    borderWidth: StyleSheet.hairlineWidth,
+  };
+  if (toggled) {
+    tagStyle.backgroundColor = Colors.pinned;
+  }
+  var textColor = toggled ? 'white' : Colors.pinned;
   return (
-    <View style={[styles.tag, {backgroundColor: Colors.pinned}]}>
+    <View style={[styles.tag, tagStyle]}>
       <CraftIcon
         name='hcr-pin'
         size={12}
-        color={'white'}
+        color={textColor}
         style={{marginTop: 2, marginLeft: -1}}
       />
-      <Text style={{fontSize: 12, color: 'white'}}>
+      <Text style={{fontSize: 12, color: textColor}}>
         Pinned
       </Text>
     </View>

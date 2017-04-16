@@ -217,7 +217,12 @@ export default class BrowserScreen extends React.Component {
 
   _craftArticle = () => {
     const nav = this.props.navigation.getNavigator('browserNav');
-    const actionParams = {type: 'article', itemId: this.article.itemId};
+    const context = {on: 'article'};
+    const actionParams = {
+      type: 'article',
+      itemId: this.article.itemId,
+      context
+    };
     nav.push(Router.getRoute('action', actionParams));
   }
 

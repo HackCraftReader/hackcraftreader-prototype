@@ -105,11 +105,11 @@ class Item {
     return !!this.tags[tag.code];
   }
 
-  @action tagToggle(tag) {
+  @action tagToggle(tag, context = {}) {
     if (this.isTagged(tag)) {
-      this.tagRemove(tag);
+      this.tagRemove(tag, context);
     } else {
-      this.tagAdd(tag);
+      this.tagAdd(tag, context);
     }
   }
 
@@ -117,23 +117,23 @@ class Item {
     this.points = this.points && this.points + 1;
   }
 
-  @action tagAdd(tag) {
+  @action tagAdd(tag, context = {}) {
     const label = tag.label;
     const code = tag.code;
-    this.newEvent(Event.TagAdd, {label, code});
+    this.newEvent(Event.TagAdd, {label, code, ...context});
     this.tags[tag.code] = tag;
   }
 
-  @action tagRemove(tag) {
+  @action tagRemove(tag, context = {}) {
     const label = tag.label;
     const code = tag.code;
-    this.newEvent(Event.TagRemove, {label, code});
+    this.newEvent(Event.TagRemove, {label, code, ...context});
     delete this.tags[tag.code];
   }
 
-  @action setNote(note) {
+  @action setNote(note, context = {}) {
     const newNote = !this.note;
-    this.newEvent(newNote ? Event.NoteAdd : Event.NoteEdit, {note});
+    this.newEvent(newNote ? Event.NoteAdd : Event.NoteEdit, {note, ...context});
     this.note = note;
   }
 
@@ -147,53 +147,53 @@ class Item {
     return this.snoozed.filter(s => s.date > now && s.label === label).length;
   }
 
-  @action snoozeToggle(label) {
+  @action snoozeToggle(label, context = {}) {
     if (this.isSnoozed(label)) {
-      this.snoozeClear(label);
+      this.snoozeClear(label, context);
     } else {
-      this.snoozeSet(label);
+      this.snoozeSet(label, context);
       // Clear all other snoozes (mutually exclusive)
       this.activeSnoozed.filter(s => s.label !== label)
-          .forEach(s => this.snoozeClear(s.label));
+          .forEach(s => this.snoozeClear(s.label, context));
     }
   }
 
-  @action snoozeSet(label) {
+  @action snoozeSet(label, context = {}) {
     if (this.isSnoozed(label)) return;
     const date = Snooze.snoozeDate(label);
-    const snooze = {date, label};
+    const snooze = {date, label, ...context};
     this.newEvent(Event.SnoozeSet, snooze);
     this.snoozed.push(snooze);
   }
 
-  @action snoozeClear(label) {
+  @action snoozeClear(label, context = {}) {
     const now = new Date();
     let curSnooze = this.snoozed.filter(s => s.date > now && s.label === label);
     curSnooze = curSnooze ? curSnooze[0] : false;
     if (curSnooze) {
-      this.newEvent(Event.SnoozeClear, curSnooze);
+      this.newEvent(Event.SnoozeClear, {...curSnooze, ...context});
       this.snoozed.remove(curSnooze);
     }
   }
 
-  @action pinToggle() {
+  @action pinToggle(context = {}) {
     let pinned = !this.pinned;
     if (pinned) {
-      this.pinSet();
+      this.pinSet(context);
     } else {
-      this.pinClear();
+      this.pinClear(context);
     }
   }
 
-  @action pinSet() {
+  @action pinSet(context = {}) {
     PinnedStore.pinItem(this.itemId);
-    this.newEvent(Event.PinnedSet, {});
+    this.newEvent(Event.PinnedSet, context);
     this.pinned = true;
   }
 
-  @action pinClear() {
+  @action pinClear(context = {}) {
     PinnedStore.unpinItem(this.itemId);
-    this.newEvent(Event.PinnedClear, {});
+    this.newEvent(Event.PinnedClear, context);
     this.pinned = false;
   }
 

@@ -211,7 +211,7 @@ function Comment(props) {
       <View>
         {comment.comment}
       </View>
-      <ItemStateRow item={comment} />
+      <ItemStateRow item={comment} showPinned />
       <View style={styles.actionsRow}>
         <TouchableOpacity
           style={{flexDirection: 'row'}}
@@ -589,30 +589,40 @@ export default class CommentsScreen extends React.Component {
 
   _craftComment = (commentId) => {
     const commentNav = this.props.navigation.getNavigator('commentsNav');
-    const actionParams = {type: 'comment', itemId: commentId};
+    const comment = ItemStore.lookupItem(commentId);
+    const context = {author: comment.author, descendantsCount: comment.descendantsCount};
+    const actionParams = {
+      type: 'comment',
+      itemId: commentId,
+      context
+    };
     commentNav.push(Router.getRoute('action', actionParams));
   }
 
   _upvoteComment = (commentId) => {
-    // TODO: change state
     ItemStore.lookupItem(commentId).upvote();
     this.setState({});
   }
 
   _upvoteArticle = (articleId) => {
-    // TODO: change state
     ItemStore.lookupItem(articleId).upvote();
     this.setState({});
   }
 
   _craftArticle = () => {
     const commentNav = this.props.navigation.getNavigator('commentsNav');
-    const actionParams = {type: 'article', itemId: this.article.itemId};
+    const context = {on: 'comments'};
+    const actionParams = {
+      type: 'article',
+      itemId: this.article.itemId,
+      updateCallback: () => { this.setState({}); },
+      context
+    };
     commentNav.push(Router.getRoute('action', actionParams));
   }
 
   _createComment = () => {
-    // TODO: Bring in readability.js
+    // TODO: Mock up comment writing...?
   }
 
   _articleDone = () => {

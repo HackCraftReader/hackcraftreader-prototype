@@ -1,30 +1,28 @@
 Next:
-* Tag without filled in for display in Log
-* All events captured and display in Log (All event types)
+* Add "on: comments/article" on all top-level events 
+* generalize comment author and descendantsCount caching in event data
+on comments
+* 1 events on 1 comments
+* hook up row actions to stack navigation (open article / comment)
 * Support non-articles being pinned
-* Log screen supports navigation to article (click on article) /
-comments otherwise
 * Log screen live filtering
-* Row with summary
-  - Article: of article tags, comment tags, and down arrow to expand
-  - Comments:  
+* more static historical data
 
 Missing small features:
-* vote turns to unvote
+* vote turns to unvote (animated)
 * vote on comments
 * ReadList Zero with unicorn icon
+* EOF at end of log
 
 Missing big features:
+* time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics 
 * Log screen
-* static reddit data
-* by day feed
+* by day feed 
+* static reddit data (optional)
 * search in articles screen
-* time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics
 * mock up replies / comments
 * Notifications screen
 * Settings Screen
-
-// try no outline on clear all filters
 
 Upgrades:
 * Expo 15
@@ -34,6 +32,8 @@ to item support)
  * some solution for 'Done' to close keyboard on notes
  * New react-navigation and react-router for deep-linking (handling
  links from log / notifications screen)
+ * Comment reply author use slack integrated message to keybaord input
+   with auto-preview in position comment will go.
 
 * Use react-native-modal for craft modal. Have top-level component
   with ref passed a prop through component tree

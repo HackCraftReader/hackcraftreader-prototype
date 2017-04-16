@@ -64,10 +64,10 @@ export default class ActionScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    const { itemId, updateCallback } = this.props.route.params;
+    const { itemId, updateCallback, context } = this.props.route.params;
     const item = this.props.ItemStore.lookupItem(itemId);
     const noteText = item.note;
-    this.state = {noteText, item, updateCallback};
+    this.state = {noteText, item, updateCallback, context};
   }
 
   render() {
@@ -148,11 +148,11 @@ export default class ActionScreen extends React.Component {
   }
 
   _saveMyNote = () => {
-    this.state.item.setNote(this.state.noteText);
+    this.state.item.setNote(this.state.noteText, this.state.context);
   }
 
   _toggleTag = (tag) => {
-    this.state.item.tagToggle(tag);
+    this.state.item.tagToggle(tag, this.state.context);
     this._close();
   }
 
@@ -161,7 +161,7 @@ export default class ActionScreen extends React.Component {
   }
 
   _toggleSnooze = (when) => {
-    this.state.item.snoozeToggle(when);
+    this.state.item.snoozeToggle(when, this.state.context);
     this._close();
   }
 
@@ -170,7 +170,7 @@ export default class ActionScreen extends React.Component {
   }
 
   _togglePinned = () => {
-    this.state.item.pinToggle();
+    this.state.item.pinToggle(this.state.context);
     this._close();
   }
 }

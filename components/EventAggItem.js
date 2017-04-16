@@ -40,7 +40,7 @@ class EventCollapsableRow extends React.Component {
       this.state.rotationValue,
       {
         toValue,
-        duration: 150,
+        duration: 100,
       }
     ).start(() => this.props.toggleExpand());
   }
@@ -91,8 +91,21 @@ function formatTimePassed(elapsed) {
 export default function EventAggItem({event, toggleExpand}) {
   const spent = formatTimePassed(event.timeSpent);
   const articleAgg = event.type === 'agg_article_events';
-  let onWhat = event.uniqueComments ? event.uniqueComments + ' ' : '';
-  onWhat += articleAgg ? 'article' : 'comments';
+  let onWhat = '';
+  if (articleAgg) {
+    // TODO: Consider whether the context of actions from feed
+    // page directly gets its own context or its own labeling such as " on article from feed";
+    if (event.uniqueComments) {
+      onWhat += event.uniqueComments
+              + ' '
+              + (event.uniqueComments > 1 ? 'comments' : 'comment');
+    } else {
+      onWhat = 'comments';
+    }
+  } else {
+    onWhat = 'article';
+  }
+  const eventText = event.eventCount > 1 ? 'events' : 'event';
   const whenMin = moment(event.minTime, 'X').from(moment());
   const whenMax = moment(event.maxTime, 'X').from(moment());
   return (
@@ -103,7 +116,7 @@ export default function EventAggItem({event, toggleExpand}) {
          ? <Ionicons name='ios-globe-outline' size={13} />
          : <CraftIcon name='hcr-comment' size={13} />
         }
-        {' • ' + event.eventCount + ' events on ' + onWhat}
+        {' • ' + event.eventCount + ' ' + eventText + ' on ' + onWhat}
       </Text>
       {event.tags.length > 0
        ? <AggStateRow tags={event.tags} />

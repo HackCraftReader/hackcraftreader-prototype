@@ -340,7 +340,7 @@ export default class LogScreen extends React.Component {
       article.events.forEach(([seqId, storeId]) => {
         const event = EventStore.bySeqId(seqId);
         if (event.type !== Event.DoneSet && event.type !== Event.DoneClear) {
-          const wasOnComment = event.itemId !== event.articleId;
+          const wasOnComment = event.itemId !== event.articleId || event.data.on === 'comments';
           if (wasOnComment) {
             commentEvents.push(event);
           } else {
@@ -609,6 +609,7 @@ const styles = StyleSheet.create({
   sectionText: {
     fontSize: 16,
     color: Colors.sectionText,
+    letterSpacing: 2,
   },
 
   // ---
