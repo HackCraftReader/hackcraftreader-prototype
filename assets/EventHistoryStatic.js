@@ -105,4 +105,131 @@ export default [
       descendantsCount: 1,
     }
   },
+  {
+    itemId: 'hn_a_13187280',
+    articleId: 'hn_a_13187280',
+    type: 'time_spent',
+    time: moment().subtract(1.9, 'days').unix(),
+    data: {
+      spent: 150,
+      on: 'article',
+    }
+  },
+  {
+    itemId: 'hn_a_13184941',
+    articleId: 'hn_a_13184941',
+    type: 'time_spent',
+    time: moment().subtract(3.1, 'days').unix(),
+    data: {
+      spent: 122,
+      on: 'article',
+    }
+  },
+  {
+    itemId: 'hn_a_13184941',
+    articleId: 'hn_a_13184941',
+    type: 'time_spent',
+    time: moment().subtract(3.2, 'days').unix(),
+    data: {
+      spent: 222,
+      on: 'comments',
+    }
+  },
+  {
+    itemId: 'hn_a_13182668',
+    articleId: 'hn_a_13182668',
+    type: 'time_spent',
+    time: moment().subtract(3.3, 'days').unix(),
+    data: {
+      spent: 150,
+      on: 'article',
+    }
+  },
+  {
+    itemId: 'hn_a_13186419',
+    articleId: 'hn_a_13186419',
+    type: 'time_spent',
+    time: moment().subtract(5, 'days').unix(),
+    data: {
+      spent: 188,
+      on: 'article',
+    }
+  },
+  {
+    itemId: 'hn_c_13186712',
+    articleId: 'hn_a_13184079',
+    type: 'tag_add',
+    time: moment().subtract(7, 'days').unix(),
+    data: {
+      label: 'I Could Use This',
+      code: 'o',
+      author: 'zitterbewegung',
+      descendantsCount: 0,
+    }
+  },
+  {
+    itemId: 'hn_a_13185892',
+    articleId: 'hn_a_13185892',
+    type: 'tag_add',
+    time: moment().subtract(10, 'days').unix(),
+    data: {
+      label: 'Subject of Interest',
+      code: 'g',
+      on: 'article'
+    }
+  },
+  {
+    itemId: 'hn_a_13185892',
+    articleId: 'hn_a_13185892',
+    type: 'time_spent',
+    time: moment().subtract(10.1, 'days').unix(),
+    data: {
+      spent: 23,
+      on: 'article',
+    }
+  },
+  {
+    itemId: 'hn_a_13185932',
+    articleId: 'hn_a_13185932',
+    type: 'time_spent',
+    time: moment().subtract(10.5, 'days').unix(),
+    data: {
+      spent: 62,
+      on: 'comments',
+    }
+  },
+  {
+    itemId: 'hn_c_13186053',
+    articleId: 'hn_a_13185932',
+    type: 'tag_add',
+    time: moment().subtract(10.5, 'days').unix(),
+    data: {
+      label: 'Return with Time',
+      code: 'r',
+      author: 'WorldMaker',
+      descendantsCount: 1,
+    }
+  },
+  {
+    itemId: 'hn_c_13187717',
+    articleId: 'hn_a_13186132',
+    type: 'tag_add',
+    time: moment().subtract(62, 'days').unix(),
+    data: {
+      label: 'Wise Words',
+      code: 'p',
+      author: 'wolfgang42',
+      descendantsCount: 2
+    }
+  },
+  {
+    itemId: 'hn_a_13186132',
+    articleId: 'hn_a_13186132',
+    type: 'time_spent',
+    time: moment().subtract(62, 'days').unix(),
+    data: {
+      spent: 45,
+      on: 'comments',
+    }
+  },
 ];

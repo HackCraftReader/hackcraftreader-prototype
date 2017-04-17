@@ -234,7 +234,7 @@ export default class LogScreen extends React.Component {
           <View>
             <View style={[styles.sliderTick, {left: 15, backgroundColor: this.state.filterTime >= 0 ? '#3985B8' : 'white'}]} />
             <View style={[styles.sliderBottom, {left: 8}]}>
-              <Text style={styles.sliderLabel}>5 s+</Text>
+              <Text style={styles.sliderLabel}>0 s+</Text>
             </View>
             <View style={[styles.sliderTick, {left: 55, backgroundColor: this.state.filterTime >= 1 ? '#3985B8' : 'white'}]} />
             <View style={[styles.sliderBottom, {left: 47}]}>
@@ -261,6 +261,36 @@ export default class LogScreen extends React.Component {
         </View>
       </View>
     );
+  }
+
+  _isInFilterTime = (timeSpent) => {
+    if (!this.state.inSearch || !this.state.filterTime) {
+      return true;
+    }
+    if (this.state.filterTime >= 3) {
+      return timeSpent >= 300;
+    }
+    if (this.state.filterTime >= 2) {
+      return timeSpent >= 60;
+    }
+    if (this.state.filterTime >= 1) {
+      return timeSpent >= 30;
+    }
+    return false;
+  }
+
+  _isInFilterTags = (tags) => {
+    if (!this.state.inSearch || this.state.tagFilters.length === 0) {
+      return true;
+    }
+    let found = false;
+    tags.forEach(tag => {
+      const code = tag.type === 'note' ? 'note' : tag.code;
+      if (this.state.tagFilters.includes(code)) {
+        found = true;
+      }
+    });
+    return found;
   }
 
   _toggleTagFilter = (tag) => {
@@ -323,20 +353,15 @@ export default class LogScreen extends React.Component {
           totalTimeSpent += event.data.spent;
         }
       });
+      if (!this._isInFilterTime(totalTimeSpent)) {
+        return;
+      }
 
       // Sections are Today, Yesterday and then by date.
       const time = moment(article.lastEventTime, 'X');
       const section = relativeDayName(time).toUpperCase();
       const articleItem = ItemStore.lookupItem(article.articleId);
 
-      if (!(section in listData)) {
-        listData[section] = [];
-      }
-      listData[section].push({
-        type: 'article_header',
-        articleItem: articleItem,
-        timeSpent: totalTimeSpent
-      });
       let articleEvents = [];
       let commentEvents = [];
       article.events.forEach(([seqId, storeId]) => {
@@ -352,21 +377,37 @@ export default class LogScreen extends React.Component {
         }
       });
 
+
+      const {timeSpent: articleTimeSpent, tags: articleTags} = aggregateEvents(articleEvents);
+      const {timeSpent: commentTimeSpent, tags: commentTags, uniqueComments} = aggregateEvents(commentEvents);
+
+      if (!this._isInFilterTags([...articleTags, ...commentTags])) {
+        return;
+      }
+
+      if (!(section in listData)) {
+        listData[section] = [];
+      }
+      listData[section].push({
+        type: 'article_header',
+        articleItem: articleItem,
+        timeSpent: totalTimeSpent
+      });
+
       // TODO: refactor to function or inline func and do for commentEvents as well
       if (articleEvents.length > 0) {
         // Add aggregate node
         const minTime = articleEvents[0].time;
         const maxTime = articleEvents[articleEvents.length - 1].time;
-        const {timeSpent, tags} = aggregateEvents(articleEvents);
         const id = 'article_events_' + article.articleId;
         const expanded = !!this.state.isExpanded[id];
         listData[section].push({
           id,
           type: 'agg_article_events',
           articleItem: articleItem,
-          timeSpent: timeSpent,
+          timeSpent: articleTimeSpent,
           eventCount: articleEvents.length,
-          tags,
+          tags: articleTags,
           minTime,
           maxTime,
           expanded,
@@ -381,17 +422,16 @@ export default class LogScreen extends React.Component {
         // Add aggregate node
         const minTime = commentEvents[0].time;
         const maxTime = commentEvents[commentEvents.length - 1].time;
-        const {timeSpent, tags, uniqueComments} = aggregateEvents(commentEvents);
         const id = 'comment_events_' + article.articleId;
         const expanded = !!this.state.isExpanded[id];
         listData[section].push({
           id,
           type: 'agg_comment_events',
           articleItem: articleItem,
-          timeSpent: timeSpent,
+          timeSpent: commentTimeSpent,
           eventCount: commentEvents.length,
           uniqueComments,
-          tags,
+          tags: commentTags,
           minTime,
           maxTime,
           expanded,
@@ -496,13 +536,23 @@ export default class LogScreen extends React.Component {
 
   _openArticle = (article) => {
     const rootNav = this.props.navigation.getNavigator('root');
-    const routeParams = {'screen': 'article', itemId: article.articleId, url: article.url, updateCallback: this._updateLog};
+    const routeParams = {
+      'screen': 'article',
+      itemId: article.articleId,
+      url: article.url,
+      updateCallback: this._updateLog
+    };
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
   _openComments = (article, commentId) => {
     const rootNav = this.props.navigation.getNavigator('root');
-    const routeParams = {'screen': 'comments', itemId: article.articleId, url: article.url, updateCallback: this._updateLog};
+    const routeParams = {
+      'screen': 'comments',
+      itemId: article.articleId,
+      url: article.url,
+      updateCallback: this._updateLog
+    };
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 }

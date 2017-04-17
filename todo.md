@@ -1,21 +1,16 @@
 Next:
-* Add "on: comments/article" on all top-level events 
-* generalize comment author and descendantsCount caching in event data
-on comments
-* 1 events on 1 comments
-* hook up row actions to stack navigation (open article / comment)
-* Support non-articles being pinned
 * Log screen live filtering
 * more static historical data
+* time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics 
+* Support non-articles being pinned 
 
 Missing small features:
-* vote turns to unvote (animated)
+* vote turns to unvote (animated) (component)
 * vote on comments
 * ReadList Zero with unicorn icon
 * EOF at end of log
 
 Missing big features:
-* time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics 
 * Log screen
 * by day feed 
 * static reddit data (optional)
