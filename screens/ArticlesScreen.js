@@ -13,8 +13,7 @@ import {
   Ionicons,
 } from '@exponent/vector-icons';
 
-
-import { withNavigation, createFocusAwareComponent } from '@exponent/ex-navigation';
+import { withNavigation } from '@exponent/ex-navigation';
 
 import {
   SwipeListView, SwipeRow
@@ -242,13 +241,15 @@ export default class ArticlesScreen extends React.Component {
     if (data.isSection) {
       return <ArticleSection section={data} checkAll={this._checkAll} />;
     } else {
-      return <ArticleRow
-               article={data}
-               isLast={data.isLast}
-               upvote={this._upvoteArticle}
-               openArticle={this._openArticle}
-               openComments={this._openComments}
-             />;
+      return (
+        <ArticleRow
+          article={data}
+          isLast={data.isLast}
+          upvote={this._upvoteArticle}
+          openArticle={this._openArticle}
+          openComments={this._openComments}
+        />
+      );
     }
   }
 
@@ -262,7 +263,7 @@ export default class ArticlesScreen extends React.Component {
     this.setState({showDone});
   }
 
-  _updateFeedItems = newItems => {    
+  _updateFeedItems = newItems => {
     this.setState({feedItems: newItems});
   }
 
@@ -294,7 +295,7 @@ export default class ArticlesScreen extends React.Component {
     const commentNav = this.props.navigation.getNavigator('root');
     // We use comments context from article list, meaning in Log,
     // this event takes you to the comments screen first.
-    const context = {on: 'comments'};
+    const context = {on: 'article'};
     const actionParams = {
       type: 'article',
       itemId: article.itemId,
@@ -327,12 +328,12 @@ export default class ArticlesScreen extends React.Component {
     articles.forEach((article, idx) => {
       if (idx % groupSize === 0) {
         if (idx > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
-        curGroup =
-          { 'isSection': true,
-            'title': `${title} ${idx + 1}-${idx + groupSize}`,
-            'iconName': 'y-combinator-square',
-            'itemIds': []
-          };
+        curGroup = {
+          'isSection': true,
+          'title': `${title} ${idx + 1}-${idx + groupSize}`,
+          'iconName': 'y-combinator-square',
+          'itemIds': []
+        };
         groupedArticles.push(curGroup);
       }
       if ((!showDone || !article.done) && !article.pinned) {
@@ -342,8 +343,8 @@ export default class ArticlesScreen extends React.Component {
     });
     if (groupedArticles.length > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
     if (PinnedStore.count > 0) {
-      curGroup =
-      { 'isSection': true,
+      curGroup = {
+        'isSection': true,
         'title': `Pinned`,
         'iconName': 'hcr-pin',
         'itemIds': []
@@ -373,7 +374,7 @@ function SwipeActions({article, check, craft, close}) {
   return (
     <View style={styles.rowBack}>
       <View style={styles.checkContainer}>
-        <TouchableOpacity onPress={() => {close(); check(article);}} hitSlop={slop}>
+        <TouchableOpacity onPress={() => { close(); check(article); }} hitSlop={slop}>
           <CraftIcon
             name='hcr-check'
             size={37}
@@ -383,7 +384,7 @@ function SwipeActions({article, check, craft, close}) {
         </TouchableOpacity>
       </View>
       <View style={styles.craftContainer}>
-        <TouchableOpacity onPress={() => {close(); craft(article);}} hitSlop={slop}>
+        <TouchableOpacity onPress={() => { close(); craft(article); }} hitSlop={slop}>
           <CraftIcon
             name='hcr-action'
             size={37}

@@ -14,12 +14,12 @@ import relativeDayName from '../utilities/relativeDayName';
 
 import {ArticleTitleAndDomain, CommentIcon} from '../components/ArticleComponents';
 
-export default function EventArticleHeader({event, article}) {
+export default function EventArticleHeader({event, article, openArticle, openComments}) {
   const when = relativeDayName(article.created, {includeTime: true});
   return (
     <View style={{backgroundColor: 'white'}}>
       <TouchableHighlight
-        onPress={() => this._openRow(event)}
+        onPress={openArticle}
         underlayColor='#E8F0FE'
       >
         <View style={styles.articleRow}>
@@ -57,7 +57,7 @@ export default function EventArticleHeader({event, article}) {
           <View style={styles.rightCommentCol}>
             <CommentIcon
               article={article}
-              openComments={this._openComments}
+              openComments={openComments}
             />
           </View>
         </View>

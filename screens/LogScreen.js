@@ -20,6 +20,8 @@ import moment from 'moment/src/moment'; // Moment ES6 workaround
 
 import Colors from '../constants/Colors';
 
+import Router from '../navigation/Router';
+
 import relativeDayName from '../utilities/relativeDayName';
 
 import {Tags, FilterTag, FilterNote, TagButton, NoteButton} from '../components/Tags';
@@ -340,6 +342,7 @@ export default class LogScreen extends React.Component {
       article.events.forEach(([seqId, storeId]) => {
         const event = EventStore.bySeqId(seqId);
         if (event.type !== Event.DoneSet && event.type !== Event.DoneClear) {
+          event.articleItem = articleItem;
           const wasOnComment = event.itemId !== event.articleId || event.data.on === 'comments';
           if (wasOnComment) {
             commentEvents.push(event);
@@ -412,6 +415,8 @@ export default class LogScreen extends React.Component {
           key={sectionId + rowId}
           event={rowData}
           article={article}
+          openArticle={() => this._openArticle(article)}
+          openComments={() => this._openComments(article)}
         />
       );
     } else if (rowData.type.startsWith('agg_')) {
@@ -423,9 +428,23 @@ export default class LogScreen extends React.Component {
         />
       );
     } else {
+      const event = rowData;
+      const article = event.articleItem;
       return (
         <View key={sectionId + rowId}>
-          <EventItem event={rowData} />
+          <EventItem
+            event={event}
+            openEvent={
+              () => {
+                const wasComment = event.itemId !== event.articleId || event.data.on === 'comments';
+                if (wasComment) {
+                  this._openComments(article, event.itemId);
+                } else {
+                  this._openArticle(article);
+                }
+              }
+            }
+          />
         </View>
       );
     }
@@ -469,6 +488,22 @@ export default class LogScreen extends React.Component {
         [expandId]: !expanded
       }
     });
+  }
+
+  _updateLog = () => {
+    this.setState({});
+  }
+
+  _openArticle = (article) => {
+    const rootNav = this.props.navigation.getNavigator('root');
+    const routeParams = {'screen': 'article', itemId: article.articleId, url: article.url, updateCallback: this._updateLog};
+    rootNav.push(Router.getRoute('articleNavigation', routeParams));
+  }
+
+  _openComments = (article, commentId) => {
+    const rootNav = this.props.navigation.getNavigator('root');
+    const routeParams = {'screen': 'comments', itemId: article.articleId, url: article.url, updateCallback: this._updateLog};
+    rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 }
 

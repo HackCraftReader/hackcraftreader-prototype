@@ -93,8 +93,11 @@ export default function EventAggItem({event, toggleExpand}) {
   const articleAgg = event.type === 'agg_article_events';
   let onWhat = '';
   if (articleAgg) {
+    onWhat = 'article';
+  } else {
     // TODO: Consider whether the context of actions from feed
-    // page directly gets its own context or its own labeling such as " on article from feed";
+    // page directly gets its own context or its own labeling such as
+    // " on article from feed";
     if (event.uniqueComments) {
       onWhat += event.uniqueComments
               + ' '
@@ -102,8 +105,6 @@ export default function EventAggItem({event, toggleExpand}) {
     } else {
       onWhat = 'comments';
     }
-  } else {
-    onWhat = 'article';
   }
   const eventText = event.eventCount > 1 ? 'events' : 'event';
   const whenMin = moment(event.minTime, 'X').from(moment());

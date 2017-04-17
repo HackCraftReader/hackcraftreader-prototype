@@ -42,6 +42,11 @@ class ArticleCache {
   constructor(store, articleId) {
     this.store = store;
     this.articleId = articleId;
+
+    // TODO: need to cache more in the article store eventually,
+    // maybe pull in the title, url, text etc from the ItemStore
+    // when first created or during addEvent (updating out of date
+    // info).
   }
 
   @action addEvent(data, eventStoreId, eventSeqId, eventTime) {
