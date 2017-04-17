@@ -1,6 +1,4 @@
 Next:
-* Log screen live filtering
-* more static historical data
 * time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics 
 * Support non-articles being pinned 
 

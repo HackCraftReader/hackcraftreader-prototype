@@ -101,9 +101,12 @@ export default class LogScreen extends React.Component {
       rowHasChanged: (r1, r2) => r1 !== r2,
       sectionHeaderHasChanged: (s1, s2) => s1 !== s2
     });
+    this.timeout = null;
     this.searchBarRef = '';
     this.state = {
       inSearch: false,
+      filterTime: 0,
+      searchText: '',
       tagFilters: [],
       isExpanded: {},
     };
@@ -129,8 +132,14 @@ export default class LogScreen extends React.Component {
   _toggleSearch = () => {
     const inSearch = !this.state.inSearch;
     if (!inSearch) this._clearTagFilters();
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
     this.setState({
-      inSearch
+      inSearch,
+      filterTime: 0,
+      searchText: '',
     });
   }
 
@@ -167,7 +176,7 @@ export default class LogScreen extends React.Component {
             clearIcon
             textInputRef={this.searchBarRef}
             containerStyle={styles.searchStyle}
-            onChangeText={this._searchLog}
+            onChangeText={this._searchChanged}
             inputStyle={styles.inputStyle}
             placeholder='Search Log...'
           />
@@ -279,6 +288,40 @@ export default class LogScreen extends React.Component {
     return false;
   }
 
+  _isInSearchText = (article, events) => {
+    if (!this.state.inSearch || !this.state.searchText) {
+      return true;
+    }
+    // TODO: Really ugly that JS has no case insensitve
+    // search and this search is not token aware. Would be great if I
+    // could push this search down to the storage level, motivation for
+    // structuring the storage such that this is possible.
+    const words = this.state.searchText.match(/\S+/g) || [];
+    if (words.length === 0) {
+      return true;
+    }
+    let hasAllWords = true;
+    words.forEach(word => {
+      word = word.toLowerCase();
+      if (article.text.toLowerCase().includes(word))
+        return;
+      if (article.note.toLowerCase().includes(word))
+        return;
+      if (article.url.toLowerCase().includes(word))
+        return;
+      let foundInNote = false;
+      events.forEach((event) => {
+        if (event.data.note && event.data.note.toLowerCase().includes(word)) {
+          foundInNote = true;
+        }
+      });
+      if (foundInNote)
+        return;
+      hasAllWords = false;
+    });
+    return hasAllWords;
+  }
+
   _isInFilterTags = (tags) => {
     if (!this.state.inSearch || this.state.tagFilters.length === 0) {
       return true;
@@ -318,6 +361,14 @@ export default class LogScreen extends React.Component {
     });
   }
 
+  _searchChanged = (text) => {
+    // Debounce the text input by 500ms
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(() => this.setState({searchText: text}), 1000);
+  }
+
   _filterPlaceHolder() {
     return (
       <View style={styles.filterPlaceholder}>
@@ -325,6 +376,7 @@ export default class LogScreen extends React.Component {
       </View>
     );
   }
+
   _renderFilterTags() {
     const tags = [Tags.TagPurple, Tags.TagOrange, Tags.TagRed, Tags.TagGreen];
     return (
@@ -377,6 +429,9 @@ export default class LogScreen extends React.Component {
         }
       });
 
+      if (!this._isInSearchText(articleItem, [...articleEvents, ...commentEvents])) {
+        return;
+      }
 
       const {timeSpent: articleTimeSpent, tags: articleTags} = aggregateEvents(articleEvents);
       const {timeSpent: commentTimeSpent, tags: commentTags, uniqueComments} = aggregateEvents(commentEvents);
