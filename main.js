@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import {
   NavigationProvider,
+  NavigationContext,
   StackNavigation,
 } from '@exponent/ex-navigation';
 import {
@@ -15,6 +16,7 @@ import {
 } from '@exponent/vector-icons';
 
 import Router from './navigation/Router';
+import Store from './navigation/Store';
 import cacheAssetsAsync from './utilities/cacheAssetsAsync';
 
 import { Provider } from 'mobx-react/native';
@@ -23,6 +25,11 @@ import ItemStore from './store/ItemStore.js';
 //import UserStore from './store/UserStore.js';
 const stores = { ItemStore }; // In case you have more than one store
 
+
+const navigationContext = new NavigationContext({
+  router: Router,
+  store: Store,
+})
 
 class AppContainer extends React.Component {
   state = {
@@ -62,7 +69,7 @@ class AppContainer extends React.Component {
       return (
         <View style={styles.container}>
           <Provider {...stores}>
-            <NavigationProvider router={Router}>
+            <NavigationProvider context={navigationContext}>
               <StackNavigation
                 id='root'
                 initialRoute={Router.getRoute('rootNavigation')}

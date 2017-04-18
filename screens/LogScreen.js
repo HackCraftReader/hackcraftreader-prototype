@@ -303,20 +303,24 @@ export default class LogScreen extends React.Component {
     let hasAllWords = true;
     words.forEach(word => {
       word = word.toLowerCase();
-      if (article.text.toLowerCase().includes(word))
+      if (article.title.toLowerCase().includes(word)) {
         return;
-      if (article.note.toLowerCase().includes(word))
+      }
+      if (article.text.toLowerCase().includes(word)) {
         return;
-      if (article.url.toLowerCase().includes(word))
+      }
+      if (article.note.toLowerCase().includes(word)) {
         return;
+      }
       let foundInNote = false;
       events.forEach((event) => {
         if (event.data.note && event.data.note.toLowerCase().includes(word)) {
           foundInNote = true;
         }
       });
-      if (foundInNote)
+      if (foundInNote) {
         return;
+      }
       hasAllWords = false;
     });
     return hasAllWords;

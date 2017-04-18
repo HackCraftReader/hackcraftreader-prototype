@@ -1,6 +1,5 @@
 Next:
-* time tracking on screens / try https://github.com/annelorraineuy/ex-navigation#screen-tracking--analytics 
-* Support non-articles being pinned 
+* Support non-articles being pinned
 
 Missing small features:
 * vote turns to unvote (animated) (component)
@@ -18,6 +17,7 @@ Missing big features:
 * Settings Screen
 
 Upgrades:
+* clear button support (add when replace dep on react-native-elements 
 * Expo 15
 * FlatList instead of ListView for Comments / Articles (speed, scroll
 to item support)
