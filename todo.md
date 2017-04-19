@@ -1,5 +1,7 @@
 Next:
 * Support non-articles being pinned
+* change article list to use sections and separators (with character spacing like Log)?
+* Have "Snoozed" section of Craft Log
 
 Missing small features:
 * vote turns to unvote (animated) (component)

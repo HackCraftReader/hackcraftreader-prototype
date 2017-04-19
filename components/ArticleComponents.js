@@ -1,10 +1,11 @@
 import React from 'react';
 import {Text, StyleSheet, TouchableOpacity, TouchableHighlight, View} from 'react-native';
 import CraftIcon from '../components/CraftIcon';
-import { FontAwesome } from '@exponent/vector-icons';
+import { Ionicons, FontAwesome } from '@exponent/vector-icons';
 import { PinnedTag, SnoozedTag, NoteTag, ItemTag, tagByCode } from './Tags';
 import Colors from '../constants/Colors';
 import extractDomain from '../utilities/extractDomain';
+import {iconForSource} from '../assets/Stories';
 
 export function UpVote({articleId, upvote}) {
   return (
@@ -126,44 +127,84 @@ export function CommentIcon(props) {
   );
 }
 
+function ArticleRowContent({article, upvote}) {
+  if (article.type === 'article') {
+    return (
+      <View style={{flexDirection: 'column'}}>
+        <ArticleTitleAndDomain article={article} />
+        <View style={{flexDirection: 'row'}}>
+          <Text style={styles.attributes}>{article.when} • </Text>
+          <Text style={styles.attributesWithWeight}>{article.points}</Text>
+          <Text style={styles.attributes}> • </Text>
+          <UpVote articleId={article.itemId} upvote={upvote} />
+        </View>
+      </View>
+    );
+  } else { // comment
+    const comment = article;
+    const authorStyle = comment.author === 'hackcrafter'
+                      ? styles.authorMe
+                      : styles.author;
+    const iconName = iconForSource(comment.source);
+    return (
+      <View style={{flexDirection: 'column'}}>
+        <Text numberOfLines={2}>
+          <Text style={authorStyle}>{comment.author}</Text>
+          {' wrote "' + comment.text}
+        </Text>
+        <View style={{flexDirection: 'row'}}>
+          <Text style={styles.attributes}>
+            <FontAwesome
+              name={iconName}
+              size={16}
+            />
+            {' • ' + comment.when + ' • '
+             + comment.descendantsCount
+             + (comment.descendantsCount === 1 ? ' reply' : ' replies')}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+}
+
 export function ArticleRow(props) {
-  const {article, isLast, upvote, openArticle, openComments} = props;
+  const {article, upvote, openArticle, openComments} = props;
 
   // I used to color background based on article.done, but not a fan of that currently.
   const bg = {backgroundColor: 'white'};
 
   return (
     <View style={bg}>
-    <TouchableHighlight
-      onPress={() => openArticle(article)}
-      underlayColor='#E8F0FE'
-    >
-    <View style={styles.rowContainer}>
-      <View style={[styles.left, !isLast && styles.bottomBorder]}>
-        {article.pinned
-         ? <CraftIcon name='hcr-pin' size={32} color={'#FF5722'} style={{marginLeft: -4}} />
-         : <Text style={styles.rankText}>{article.rank}</Text>
-        }
-      </View>
-      <View style={[styles.center, !isLast && styles.bottomBorder]}>
-        <View style={{flexDirection: 'column'}}>
-          <ArticleTitleAndDomain article={article} />
-          <View style={{flexDirection: 'row'}}>
-            <Text style={styles.attributes}>{article.when} • </Text>
-            <Text style={styles.attributesWithWeight}>{article.points}</Text>
-            <Text style={styles.attributes}> • </Text>
-            <UpVote articleId={article.itemId} upvote={upvote} />
+      <TouchableHighlight
+        onPress={() => openArticle(article)}
+        underlayColor='#E8F0FE'
+      >
+        <View style={styles.rowContainer}>
+          <View style={styles.left}>
+            {article.pinned
+             ? <CraftIcon name='hcr-pin' size={32} color={'#FF5722'} style={{marginLeft: -4}} />
+             : <Text style={styles.rankText}>{article.rank}</Text>
+            }
+          </View>
+          <View style={styles.center}>
+            <ArticleRowContent article={article} upvote={upvote} />
+          </View>
+          <View style={styles.right}>
+            {article.type === 'article'
+            ? <CommentIcon
+                article={article}
+                openComments={openComments}
+              />
+            : <Ionicons
+                name={'ios-arrow-forward'}
+                size={29}
+                color={'#BDC1C9'}
+              />
+            }
           </View>
         </View>
-      </View>
-      <View style={[styles.right, !isLast && styles.bottomBorder]}>
-        <CommentIcon
-          article={article}
-          openComments={openComments}
-        />
-      </View>
-    </View>
-    </TouchableHighlight>
+      </TouchableHighlight>
     </View>
   );
 }
@@ -200,10 +241,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
   },
-  bottomBorder: {
-    borderBottomColor: Colors.hairlineBorder,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
   left: {
     marginLeft: 15,
     width: 30,
@@ -212,8 +249,10 @@ const styles = StyleSheet.create({
   },
   right: {
     width: 45,
-    padding: 5,
-    paddingTop: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
+//    padding: 5,
+//    paddingTop: 8,
   },
   center: {
     flex: 1,
@@ -269,4 +308,14 @@ const styles = StyleSheet.create({
     color: Colors.tabIconSelected,
     fontSize: 10,
   },
+  author: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: Colors.commentHeader,
+  },
+  authorMe: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: Colors.commentHeaderOP,
+  },  
 });

@@ -161,7 +161,10 @@ export default class ArticlesScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => mobx.toJS(r1) !== mobx.toJS(r2)});
+    this.ds = new ListView.DataSource({
+      rowHasChanged: (r1, r2) => mobx.toJS(r1) !== mobx.toJS(r2),
+      sectionHeaderHasChanged: (s1, s2) => s1 !== s2
+    });
     this.isTop = this.props.route.params.name === 'Top';
     const showDone = !this.props.route.params.filtered;
     const groupCountItems = this.isTop ? TOP_GROUP_COUNT.items : BYDAY_GROUP_COUNT.items;
@@ -214,6 +217,8 @@ export default class ArticlesScreen extends React.Component {
           contentContainerStyle={this.props.route.getContentContainerStyle()}
           dataSource={dataSource}
           renderRow={this._renderRow}
+          renderSectionHeader={this._renderSection}
+          renderSeparator={this._renderSeparator}
           refreshControl={
             <RefreshControl
               refreshing={this.state.isRefreshing}
@@ -238,19 +243,36 @@ export default class ArticlesScreen extends React.Component {
   }
 
   _renderRow = data => {
-    if (data.isSection) {
-      return <ArticleSection section={data} checkAll={this._checkAll} />;
-    } else {
-      return (
-        <ArticleRow
-          article={data}
-          isLast={data.isLast}
-          upvote={this._upvoteArticle}
-          openArticle={this._openArticle}
-          openComments={this._openComments}
-        />
-      );
-    }
+    return (
+      <ArticleRow
+        article={data}
+        upvote={this._upvoteArticle}
+        openArticle={this._openArticle}
+        openComments={this._openComments}
+      />
+    );
+  }
+
+  _renderSection = (sectionData, sectionId) => {
+    const headerData = this.sectionHeaderData[sectionId];
+    return <ArticleSection section={headerData} checkAll={this._checkAll} />;
+  }
+
+  _renderSeparator = (sectionId, rowId) => {
+    const nextRowData = this.lastGroupedArticles[sectionId][Number(rowId) + 1];
+    const fullSeparator = !nextRowData;
+    const indented = {
+      backgroundColor: 'white',
+      height: 0.5,
+      flexDirection: 'row',
+      flex: 1,
+    };
+    return (
+      <View key={sectionId + rowId} style={indented}>
+        {!fullSeparator && <View style={{width: 15}} />}
+        <View style={styles.bottomBorder} />
+      </View>
+    );
   }
 
   _toggleOptions = () => {
@@ -324,24 +346,8 @@ export default class ArticlesScreen extends React.Component {
   _groupArticles(articles, showDone, groupSize) {
     var title = 'TOP';
     var curGroup = null;
-    var groupedArticles = [];
-    articles.forEach((article, idx) => {
-      if (idx % groupSize === 0) {
-        if (idx > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
-        curGroup = {
-          'isSection': true,
-          'title': `${title} ${idx + 1}-${idx + groupSize}`,
-          'iconName': 'y-combinator-square',
-          'itemIds': []
-        };
-        groupedArticles.push(curGroup);
-      }
-      if ((!showDone || !article.done) && !article.pinned) {
-        groupedArticles.push(article);
-        curGroup.itemIds.push(article.itemId);
-      }
-    });
-    if (groupedArticles.length > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
+    var groupedArticles = {};
+    var sectionHeaderData = {}
     if (PinnedStore.count > 0) {
       curGroup = {
         'isSection': true,
@@ -349,22 +355,50 @@ export default class ArticlesScreen extends React.Component {
         'iconName': 'hcr-pin',
         'itemIds': []
       };
+      let items = [];
       PinnedStore.pinnedItems.reverse().forEach(item => {
-        groupedArticles.push(item);
+        items.push(item);
         curGroup.itemIds.push(item.itemId);
-        groupedArticles.unshift(item);
       });
-      if (groupedArticles.length > 0) groupedArticles[groupedArticles.length - 1].isLast = true;
-      groupedArticles.unshift(curGroup);
+      groupedArticles[curGroup.title] = items;
+      sectionHeaderData[curGroup.title] = curGroup;
     }
-    return groupedArticles;
+
+    curGroup = null;
+    let items = [];
+    articles.forEach((article, idx) => {
+      if (idx % groupSize === 0) {
+        if (items.length > 0) {
+          groupedArticles[curGroup.title] = items;
+          sectionHeaderData[curGroup.title] = curGroup;
+          items = [];
+        }
+        curGroup = {
+          'isSection': true,
+          'title': `${title} ${idx + 1}-${idx + groupSize}`,
+          'iconName': 'y-combinator-square',
+          'itemIds': []
+        };
+      }
+      if ((!showDone || !article.done) && !article.pinned) {
+        items.push(article);
+        curGroup.itemIds.push(article.itemId);
+      }
+    });
+    if (items.length > 0) {
+      groupedArticles[curGroup.title] = items;
+      sectionHeaderData[curGroup.title] = curGroup;
+    }
+    return {groupedArticles, sectionHeaderData};
   }
 
   _articleList({articles, showDone, groupCountItems}) {
     const groupSize = groupCountItems.filter(item => item.selected)[0].value;
-    const groupedArticles = this._groupArticles(articles, showDone, groupSize);
-
-    return this.ds.cloneWithRows(groupedArticles);
+    const {groupedArticles, sectionHeaderData} = this._groupArticles(articles, showDone, groupSize);
+    this.lastGroupedArticles = groupedArticles;
+    this.sectionHeaderData = sectionHeaderData;
+    return this.ds.cloneWithRowsAndSections(groupedArticles);
+    //return this.ds.cloneWithRows(groupedArticles);
   }
 }
 
@@ -438,7 +472,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.hcrBackground,
     flex: 1,
     padding: 10,
-  }
+  },
+  bottomBorder: {
+    borderBottomColor: Colors.hairlineBorder,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flex: 1,
+  },
 });
 
 const buttonStyles = StyleSheet.create({

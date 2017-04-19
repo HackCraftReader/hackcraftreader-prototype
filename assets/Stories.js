@@ -78,10 +78,21 @@ function loadComments(article) {
   return article.children;
 }
 
+function iconForSource(source) {
+  if (source === 'HN') {
+    return 'y-combinator-square';
+  } else if (source === 'Reddit') {
+    return 'reddit-square';
+  } else {
+    return 'rss-square';
+  }
+}
+
 export {
   StoriesMeta,
   loadHNTopArticles,
   loadComments,
   itemForArticle,
+  iconForSource,
 };
 

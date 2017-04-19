@@ -17,7 +17,7 @@ import {ArticleHeader, ItemStateRow} from '../components/ArticleComponents';
 
 import {observer, inject} from 'mobx-react/native';
 
-import {loadComments} from '../assets/Stories';
+import {loadComments, iconForSource} from '../assets/Stories';
 
 import ItemStore from '../store/ItemStore';
 
@@ -34,16 +34,6 @@ import NavTabBar, {
   NavCreateButton,
   NavCheckButton,
 } from '../components/NavTabBar';
-
-function iconForSource(source) {
-  if (source === 'HN') {
-    return 'y-combinator-square';
-  } else if (source === 'Reddit') {
-    return 'reddit-square';
-  } else {
-    return 'rss-square';
-  }
-}
 
 function domToComponents(el, key, openUrl, style = null) {
   if (el.type === 'text') {
@@ -420,16 +410,18 @@ export default class CommentsScreen extends React.Component {
       };
       const level = this.state.level[comment.itemId];
       const collapsable = this.state.collapsable[comment.itemId];
-      return <Comment
-               comment={comment}
-               extraStyle={extraStyle}
-               level={level}
-               collapsable={collapsable}
-               craftComment={this._craftComment}
-               upvoteComment={this._upvoteComment}
-               openThread={this._openThread}
-               toggleDescendents={this._toggleDescendents}
-             />;
+      return (
+        <Comment
+          comment={comment}
+          extraStyle={extraStyle}
+          level={level}
+          collapsable={collapsable}
+          craftComment={this._craftComment}
+          upvoteComment={this._upvoteComment}
+          openThread={this._openThread}
+          toggleDescendents={this._toggleDescendents}
+        />
+      );
     }
   }
 
