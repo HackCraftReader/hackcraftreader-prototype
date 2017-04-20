@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import {
   StyleSheet,
-  Text,
   RefreshControl,
   ListView,
   TouchableOpacity,
@@ -16,7 +15,7 @@ import {
 import { withNavigation } from '@exponent/ex-navigation';
 
 import {
-  SwipeListView, SwipeRow
+  SwipeListView
 } from 'react-native-swipe-list-view';
 
 import MaterialSwitch from 'react-native-material-switch';
@@ -27,7 +26,7 @@ import {observer, inject} from 'mobx-react/native';
 
 import * as mobx from 'mobx';
 
-import {loadHNTopArticles} from '../assets/Stories';
+import {loadHNTopArticles, loadHNLastWeekArticles} from '../assets/Stories';
 
 import ItemStore from '../store/ItemStore';
 import PinnedStore from '../store/PinnedStore';
@@ -169,7 +168,7 @@ export default class ArticlesScreen extends React.Component {
     const showDone = !this.props.route.params.filtered;
     const groupCountItems = this.isTop ? TOP_GROUP_COUNT.items : BYDAY_GROUP_COUNT.items;
     const groupCountTitle = this.isTop ? TOP_GROUP_COUNT.title : BYDAY_GROUP_COUNT.title;
-    const articles = loadHNTopArticles();
+    const articles = this.isTop ? loadHNTopArticles() : loadHNLastWeekArticles();
 
     this.state = {
       isRefreshing: false,
@@ -201,7 +200,7 @@ export default class ArticlesScreen extends React.Component {
 
   render() {
     // TODO: disable left-swipe in for drawer somehow.. conflicts with swipe on items.
-    const dataSource = this._articleList(this.state);
+    const dataSource = this._articleList();
     return (
       <ArticleListOptionsDrawer
         ref={(optionsDrawer) => { this._optionsDrawer = optionsDrawer; }}
@@ -226,14 +225,13 @@ export default class ArticlesScreen extends React.Component {
             />
             }
           renderHiddenRow={(data, secId, rowId, rowMap) =>
-            (!data.isSection &&
             <SwipeActions
               article={data}
               check={this._checkArticle}
               craft={this._craftArticle}
               close={_ => rowMap[`${secId}${rowId}`].closeRow()}
             />
-            )}
+          }
           leftOpenValue={75}
           rightOpenValue={-75}
           closeOnRowPress
@@ -332,6 +330,9 @@ export default class ArticlesScreen extends React.Component {
   }
 
   _openArticle = article => {
+    if (!article.url) {
+      this._openComments(article);
+    }
     const rootNav = this.props.navigation.getNavigator('root');
     const routeParams = {'screen': 'article', itemId: article.itemId, url: article.url, updateCallback: this._updateArticleList};
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
@@ -344,14 +345,13 @@ export default class ArticlesScreen extends React.Component {
   }
 
   _groupArticles(articles, showDone, groupSize) {
-    var title = 'TOP';
-    var curGroup = null;
-    var groupedArticles = {};
-    var sectionHeaderData = {}
+    let title = 'TOP';
+    let curGroup = null;
+    let groupedArticles = {};
+    let sectionHeaderData = {};
     if (PinnedStore.count > 0) {
       curGroup = {
-        'isSection': true,
-        'title': `Pinned`,
+        'title': `PINNED`,
         'iconName': 'hcr-pin',
         'itemIds': []
       };
@@ -374,7 +374,6 @@ export default class ArticlesScreen extends React.Component {
           items = [];
         }
         curGroup = {
-          'isSection': true,
           'title': `${title} ${idx + 1}-${idx + groupSize}`,
           'iconName': 'y-combinator-square',
           'itemIds': []
@@ -392,13 +391,48 @@ export default class ArticlesScreen extends React.Component {
     return {groupedArticles, sectionHeaderData};
   }
 
-  _articleList({articles, showDone, groupCountItems}) {
+  _byDayArticles(byday, showDone, groupSize) {
+    let groupedArticles = {};
+    let sectionHeaderData = {};
+    for (const key in byday) {
+      const articles = byday[key].slice(0, groupSize);
+      const curGroup = {
+        'title': `${key} ${1}-${articles.length}`,
+        'iconName': 'y-combinator-square',
+        'itemIds': []
+      };
+
+      let items = [];
+      articles.forEach(article => {
+        if ((!showDone || !article.done)) {
+          items.push(article);
+          curGroup.itemIds.push(article.itemId);
+        }
+      });
+      if (items.length > 0) {
+        groupedArticles[curGroup.title] = items;
+        sectionHeaderData[curGroup.title] = curGroup;
+      }
+    }
+    return {groupedArticles, sectionHeaderData};
+  }
+
+  _articleList() {
+    const {articles, showDone, groupCountItems} = this.state;
     const groupSize = groupCountItems.filter(item => item.selected)[0].value;
-    const {groupedArticles, sectionHeaderData} = this._groupArticles(articles, showDone, groupSize);
-    this.lastGroupedArticles = groupedArticles;
-    this.sectionHeaderData = sectionHeaderData;
-    return this.ds.cloneWithRowsAndSections(groupedArticles);
-    //return this.ds.cloneWithRows(groupedArticles);
+    if (Array.isArray(articles)) {
+      // TOP page, do grouping of articles by groupSize
+      const {groupedArticles, sectionHeaderData} = this._groupArticles(articles, showDone, groupSize);
+      this.lastGroupedArticles = groupedArticles;
+      this.sectionHeaderData = sectionHeaderData;
+      return this.ds.cloneWithRowsAndSections(groupedArticles);
+    } else {
+      // By day, limit length of each section by groupSize
+      const {groupedArticles, sectionHeaderData} = this._byDayArticles(articles, showDone, groupSize);
+      this.lastGroupedArticles = groupedArticles;
+      this.sectionHeaderData = sectionHeaderData;
+      return this.ds.cloneWithRowsAndSections(groupedArticles);
+    }
   }
 }
 

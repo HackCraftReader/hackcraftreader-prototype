@@ -1,6 +1,7 @@
 // TODO: Switch to calling this Article in next refactor
 
 import moment from 'moment/src/moment'; // Moment ES6 workaround
+import relativeDayName from '../utilities/relativeDayName';
 
 var StoriesMeta = require('./hackernews/meta.json');
 
@@ -23,11 +24,10 @@ function itemForArticle(articleId) {
 
 let childrenStore = {};
 
-function loadHNTopArticles() {
-  var top = require('./hackernews/topStories.json');
+function cleanHNArticles(rawArticles) {
   const delta = moment().unix() - Number(StoriesMeta.now_i);
 
-  const articles = top.map((article, index) => {
+  const articles = rawArticles.map((article, index) => {
     let item = itemForArticle(article.id);
     item.rank = index + 1;
     item.source = 'HN';
@@ -47,6 +47,40 @@ function loadHNTopArticles() {
   });
 
   return articles;
+}
+
+function loadHNTopArticles() {
+  const top = require('./hackernews/topStories.json');
+  return cleanHNArticles(top);
+}
+
+function loadHNLastWeekArticles() {
+  const day0 = require('./hackernews/day-0.json');
+  const day1 = require('./hackernews/day-1.json');
+  const day2 = require('./hackernews/day-2.json');
+  const day3 = require('./hackernews/day-3.json');
+  const day4 = require('./hackernews/day-4.json');
+  const day5 = require('./hackernews/day-5.json');
+  const day6 = require('./hackernews/day-6.json');
+
+  const labels = [
+    relativeDayName(moment()).toUpperCase(),
+    relativeDayName(moment().subtract(1, 'days')).toUpperCase(),
+    relativeDayName(moment().subtract(2, 'days')).toUpperCase(),
+    relativeDayName(moment().subtract(3, 'days')).toUpperCase(),
+    relativeDayName(moment().subtract(4, 'days')).toUpperCase(),
+    relativeDayName(moment().subtract(5, 'days')).toUpperCase(),
+    relativeDayName(moment().subtract(6, 'days')).toUpperCase(),
+  ];
+  const allDays = [day0, day1, day2, day3, day4, day5, day6].map(
+    day => cleanHNArticles(day)
+  );
+  const lastWeek = {};
+  labels.forEach((label, idx) => {
+    const day = allDays[idx];
+    lastWeek[label] = day;
+  });
+  return lastWeek;
 }
 
 function convertCommentsToItems(comments) {
@@ -91,6 +125,7 @@ function iconForSource(source) {
 export {
   StoriesMeta,
   loadHNTopArticles,
+  loadHNLastWeekArticles,
   loadComments,
   itemForArticle,
   iconForSource,

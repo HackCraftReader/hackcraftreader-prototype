@@ -34,7 +34,7 @@ export default class RootNavigation extends React.Component {
 
       <TabNavigation
         tabBarHeight={44}
-        initialTab='log'>
+        initialTab='top'>
 
         <TabNavigationItem
           id='top'

@@ -85,8 +85,8 @@ const styles = StyleSheet.create({
 
   rightCommentCol: {
     width: 45,
-    padding: 5,
-    paddingTop: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   timeMin: {

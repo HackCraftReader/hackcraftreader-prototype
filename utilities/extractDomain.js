@@ -1,6 +1,9 @@
 
 // Given a URL, extract a useful displayable domain section
 export default function extractDomain(url) {
+  if (!url) {
+    return '';
+  }
   var domain;
     // find & remove protocol (http, ftp, etc.) and get domain
   if (url.indexOf('://') > -1) {

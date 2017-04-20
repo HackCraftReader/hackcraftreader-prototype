@@ -6,6 +6,7 @@ import { PinnedTag, SnoozedTag, NoteTag, ItemTag, tagByCode } from './Tags';
 import Colors from '../constants/Colors';
 import extractDomain from '../utilities/extractDomain';
 import {iconForSource} from '../assets/Stories';
+import cheerio from 'cheerio-without-node-native';
 
 export function UpVote({articleId, upvote}) {
   return (
@@ -112,7 +113,7 @@ export function CommentIcon(props) {
       hitSlop={slop}
       onPress={() => openComments(article)}
     >
-      <View style={{flex: 1}}>
+      <View style={{flex: 1, marginTop: 8}}>
         <CraftIcon
           name='hcr-comment'
           size={37}
@@ -142,6 +143,8 @@ function ArticleRowContent({article, upvote}) {
     );
   } else { // comment
     const comment = article;
+    var $ = cheerio.load(comment.text);
+    const commentPlainText = $.root().text();
     const authorStyle = comment.author === 'hackcrafter'
                       ? styles.authorMe
                       : styles.author;
@@ -150,7 +153,7 @@ function ArticleRowContent({article, upvote}) {
       <View style={{flexDirection: 'column'}}>
         <Text numberOfLines={2}>
           <Text style={authorStyle}>{comment.author}</Text>
-          {' wrote "' + comment.text}
+          {' wrote "' + commentPlainText}
         </Text>
         <View style={{flexDirection: 'row'}}>
           <Text style={styles.attributes}>
@@ -251,8 +254,6 @@ const styles = StyleSheet.create({
     width: 45,
     justifyContent: 'center',
     alignItems: 'center'
-//    padding: 5,
-//    paddingTop: 8,
   },
   center: {
     flex: 1,

@@ -59,5 +59,6 @@ const styles = StyleSheet.create({
   sectionText: {
     fontSize: 16,
     color: Colors.sectionText,
+    letterSpacing: 2,
   }
 });

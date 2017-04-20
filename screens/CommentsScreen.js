@@ -454,7 +454,7 @@ export default class CommentsScreen extends React.Component {
           comment.push(domToComponents(el, i, this._openUrl));
         });
         c.comment = comment;
-        
+
         flat.push(c);
         if (c.children.length > 0) {
           flat.push(...this._makeCommentTree(c.children, state, level + 1));

@@ -1,19 +1,18 @@
 Next:
-* Support non-articles being pinned
-* change article list to use sections and separators (with character spacing like Log)?
 * Have "Snoozed" section of Craft Log
 
 Missing small features:
+* handle ask HN (day 7 has one) in comments
+* rank should not be state given to item, rather during article listing...
 * vote turns to unvote (animated) (component)
 * vote on comments
 * ReadList Zero with unicorn icon
 * EOF at end of log
 
 Missing big features:
-* Log screen
 * by day feed 
 * static reddit data (optional)
-* search in articles screen
+* search in articles screen (replace ugly nav based header)
 * mock up replies / comments
 * Notifications screen
 * Settings Screen
