@@ -25,10 +25,11 @@ import Router from '../navigation/Router';
 import relativeDayName from '../utilities/relativeDayName';
 
 import {Tags, FilterTag, FilterNote, TagButton, NoteButton} from '../components/Tags';
-import EventItem from '../components/EventItem';
 import {EventRow, EventAggItem} from '../components/EventAggItem';
 import EventArticleHeader from '../components/EventArticleHeader';
 import {CommentRowContent} from '../components/ArticleComponents';
+
+import EventLogScreen from '../screens/EventLogScreen';
 
 import {observer, inject} from 'mobx-react/native';
 
@@ -42,6 +43,7 @@ import { Ionicons } from '@exponent/vector-icons';
 
 const TAGS = [Tags.TagPurple, Tags.TagOrange, Tags.TagRed, Tags.TagGreen];
 
+// DEAD CODE
 function aggregateEvents(events) {
   let timeSpent = 0;
   let tags = [];
@@ -463,6 +465,7 @@ export default class LogScreen extends React.Component {
           id,
           type: 'agg_article_events',
           articleItem: articleItem,
+          articleCache: article,
           timeSpent: article.timeSpentOnArticle,
           eventCount: article.articleEventCount,
           lastEventTime: article.articleLastEventTime,
@@ -475,6 +478,7 @@ export default class LogScreen extends React.Component {
           id,
           type: 'agg_comment_events',
           articleItem: articleItem,
+          articleCache: article,
           timeSpent: article.timeSpentOnComments,
           eventCount: article.commentsEventCount,
           lastEventTime: article.commentsLastEventTime,
@@ -533,7 +537,7 @@ export default class LogScreen extends React.Component {
         <EventAggItem
           key={sectionId + rowId}
           event={rowData}
-          onPress={() => this._openArticleEvents(rowData.articleId)}
+          onPress={() => this._openArticleEvents(rowData.articleItem, rowData.articleCache)}
         />
       );
     } else {
@@ -621,6 +625,15 @@ export default class LogScreen extends React.Component {
       updateCallback: this._updateLog
     };
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
+  }
+
+  _openArticleEvents = (article, articleCache) => {
+    const rootNav = this.props.navigation.getNavigator('root');
+    const actionParams = {
+      title: article.title,
+      articleCache,
+    };
+    rootNav.push(Router.getRoute('eventlog', actionParams));
   }
 }
 

@@ -58,7 +58,8 @@ class Item {
   @observable when = ''; // user-friedly version of created
   @observable url = '';
   @observable author = '';
-  @observable text = ''; // Title for article, comment HTML for comment
+  @observable title = ''; // Title for article
+  @observable text = ''; // comment HTML for comment, question for ask hn
   @observable points = null;
   @observable descendantsCount = 0;
   @observable parentItemId = null;

@@ -8,6 +8,7 @@ import BrowserScreen from '../screens/BrowserScreen';
 import LogScreen from '../screens/LogScreen';
 
 import ActionScreen from '../screens/ActionScreen';
+import EventLogScreen from '../screens/EventLogScreen';
 
 //import SearchScreen from '../screens/SearchScreen';
 //import LogScreen from '../screens/SearchScreen';
@@ -35,6 +36,7 @@ export default createRouter(() => ({
   rootNavigation: () => RootNavigation,
 
   action: () => ActionScreen,
+  eventlog: () => EventLogScreen,
 
   articleNavigation: () => ArticleNavigation,
   comments: () => CommentsScreen,

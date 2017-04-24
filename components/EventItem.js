@@ -45,13 +45,6 @@ function EventRow(props) {
               {props.children}
             </View>
           </View>
-          <View style={styles.eventOpener}>
-            <Ionicons
-              name={'ios-arrow-forward'}
-              size={29}
-              color={'#BDC1C9'}
-            />
-          </View>
         </View>
       </TouchableHighlight>
     </View>
