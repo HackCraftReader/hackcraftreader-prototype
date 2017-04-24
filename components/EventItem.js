@@ -3,7 +3,6 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   TouchableHighlight,
   View,
 } from 'react-native';
@@ -14,8 +13,6 @@ import ItemStore from '../store/ItemStore';
 import {Event} from '../store/EventStore';
 
 import Colors from '../constants/Colors';
-
-import relativeDayName from '../utilities/relativeDayName';
 
 import { Ionicons, FontAwesome } from '@exponent/vector-icons';
 

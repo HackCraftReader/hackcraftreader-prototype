@@ -4,8 +4,6 @@ import { observable, action, computed } from 'mobx';
 
 import EventStore, {Event} from './EventStore';
 
-import PinnedStore from './PinnedStore';
-
 import {Snooze} from '../components/Snooze';
 
 class ItemStore {
@@ -92,13 +90,11 @@ class Item {
   @action doneSet() {
     if (this.done) return;
     this.newEvent(Event.DoneSet, {});
-    this.done = true;
   }
 
   @action doneClear() {
     if (!this.done) return;
     this.newEvent(Event.DoneClear, {});
-    this.done = false;
   }
 
   isTagged(tag) {
@@ -121,20 +117,17 @@ class Item {
     const label = tag.label;
     const code = tag.code;
     this.newEvent(Event.TagAdd, {label, code, ...context});
-    this.tags[tag.code] = tag;
   }
 
   @action tagRemove(tag, context = {}) {
     const label = tag.label;
     const code = tag.code;
     this.newEvent(Event.TagRemove, {label, code, ...context});
-    delete this.tags[tag.code];
   }
 
   @action setNote(note, context = {}) {
     const newNote = !this.note;
     this.newEvent(newNote ? Event.NoteAdd : Event.NoteEdit, {note, ...context});
-    this.note = note;
   }
 
   @computed get activeSnoozed() {
@@ -163,7 +156,6 @@ class Item {
     const date = Snooze.snoozeDate(label);
     const snooze = {date, label, ...context};
     this.newEvent(Event.SnoozeSet, snooze);
-    this.snoozed.push(snooze);
   }
 
   @action snoozeClear(label, context = {}) {
@@ -172,7 +164,6 @@ class Item {
     curSnooze = curSnooze ? curSnooze[0] : false;
     if (curSnooze) {
       this.newEvent(Event.SnoozeClear, {...curSnooze, ...context});
-      this.snoozed.remove(curSnooze);
     }
   }
 
@@ -186,15 +177,11 @@ class Item {
   }
 
   @action pinSet(context = {}) {
-    PinnedStore.pinItem(this.itemId);
     this.newEvent(Event.PinnedSet, context);
-    this.pinned = true;
   }
 
   @action pinClear(context = {}) {
-    PinnedStore.unpinItem(this.itemId);
     this.newEvent(Event.PinnedClear, context);
-    this.pinned = false;
   }
 
   newEvent(type, data) {

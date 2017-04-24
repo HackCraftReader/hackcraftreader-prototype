@@ -19,15 +19,15 @@ class ArticleCacheStore {
   // Could be place to track sync state
   @observable isLoading = false;
 
-  @action addOrUpdate(articleId, data, eventStoreId, eventSeqId, eventTime) {
+  @action addOrUpdate(event, eventStoreId) {
     var article;
-    if (this.articles.has(articleId)) {
-      article = this.articles.get(articleId);
+    if (this.articles.has(event.articleId)) {
+      article = this.articles.get(event.articleId);
     } else {
-      article = new ArticleCache(this, articleId);
-      this.articles.set(articleId, article);
+      article = new ArticleCache(this, event.articleId);
+      this.articles.set(event.articleId, article);
     }
-    article.addEvent(data, eventStoreId, eventSeqId, eventTime);
+    article.addEvent(event, eventStoreId);
   }
 }
 
@@ -36,25 +36,52 @@ class ArticleCache {
   store; // ref back to ItemStore
 
   @observable lastEventTime = null; // Date
-  @observable data = {}; // Cached data
+  @observable timeSpentOnArticle = 0;
+  @observable timeSpentOnComments = 0;
+  @observable articleEventCount = 0;
+  @observable commentsEventCount = 0;
+  @observable articleLastEventTime = null;
+  @observable commentsLastEventTime = null;
   @observable events = [];
+  @observable commentsWithTags = [];
 
   constructor(store, articleId) {
     this.store = store;
     this.articleId = articleId;
-
-    // TODO: need to cache more in the article store eventually,
-    // maybe pull in the title, url, text etc from the ItemStore
-    // when first created or during addEvent (updating out of date
-    // info).
   }
 
-  @action addEvent(data, eventStoreId, eventSeqId, eventTime) {
-    if (!this.lastEventTime || eventTime > this.lastEventTime) {
-      this.lastEventTime = eventTime;
-      this.data = data;
+  @action addEvent(event, eventStoreId) {
+    if (!this.lastEventTime || event.time > this.lastEventTime) {
+      this.lastEventTime = event.time;
     }
-    this.events.unshift([eventSeqId, eventStoreId]);
+
+    const wasOnComment = event.itemId !== event.articleId || event.data.on === 'comments';
+    if (event.type === 'time_spent') {
+      if (wasOnComment) {
+        this.timeSpentOnComments += event.data.spent;
+      } else {
+        this.timeSpentOnArticle += event.data.spent;
+      }
+    }
+
+    if (wasOnComment) {
+      this.commentsEventCount += 1;
+      if (!this.commentsLastEventTime || event.time > this.commentsLastEventTime) {
+        this.commentsLastEventTime = event.time;
+      }
+    } else {
+      this.articleEventCount += 1;
+      if (!this.articleLastEventTime || event.time > this.articleLastEventTime) {
+        this.articleLastEventTime = event.time;
+      }
+    }
+
+    if (event.itemId !== event.articleId) {
+      if (!this.commentsWithTags.includes(event.itemId)) {
+        this.commentsWithTags.push(event.itemId);
+      }
+    }
+    this.events.unshift([event.seqId, eventStoreId]);
   }
 }
 

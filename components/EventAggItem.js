@@ -12,8 +12,6 @@ import {
 import moment from 'moment/src/moment'; // Moment ES6 workaround
 
 import CraftIcon from '../components/CraftIcon';
-import {AggStateRow} from '../components/ArticleComponents';
-
 import ItemStore from '../store/ItemStore';
 import {Event} from '../store/EventStore';
 
@@ -25,6 +23,7 @@ import { Ionicons, FontAwesome } from '@exponent/vector-icons';
 
 import { Tags, tagByCode, PinnedTag, SnoozedTag, NoteTag, ItemTag } from './Tags';
 
+// DEAD CODE
 class EventCollapsableRow extends React.Component {
   constructor(props) {
     super(props);
@@ -82,51 +81,67 @@ class EventCollapsableRow extends React.Component {
   }
 }
 
+export function EventRow(props) {
+  const {onPress, showOpenArrow} = props;
+  return (
+    <View style={styles.eventContainer}>
+      <TouchableHighlight
+        onPress={onPress}
+        underlayColor='#E8F0FE'
+      >
+        <View style={styles.eventItem}>
+          <View style={{flexDirection: 'row', flex: 1}}>
+            <View>
+              {props.children}
+            </View>
+          </View>
+          {showOpenArrow &&
+          <View style={styles.eventOpener}>
+            <Ionicons
+              name={'ios-arrow-forward'}
+              size={29}
+              color={'#BDC1C9'}
+            />
+          </View>
+          }
+        </View>
+      </TouchableHighlight>
+    </View>
+  );
+}
+
 function formatTimePassed(elapsed) {
   const mins = Math.floor(elapsed / 60) + 'm ';
   const secs = Math.floor(elapsed % 60) + 's';
   return elapsed >= 60 ? mins + secs : secs;
 }
 
-export default function EventAggItem({event, toggleExpand}) {
+export function EventAggItem({event, onPress}) {
   const spent = formatTimePassed(event.timeSpent);
   const articleAgg = event.type === 'agg_article_events';
   let onWhat = '';
   if (articleAgg) {
     onWhat = 'article';
   } else {
-    // TODO: Consider whether the context of actions from feed
-    // page directly gets its own context or its own labeling such as
-    // " on article from feed";
-    if (event.uniqueComments) {
-      onWhat += event.uniqueComments
-              + ' '
-              + (event.uniqueComments > 1 ? 'comments' : 'comment');
-    } else {
-      onWhat = 'comments';
-    }
+    onWhat = 'comments';
   }
   const eventText = event.eventCount > 1 ? 'events' : 'event';
-  const whenMin = moment(event.minTime, 'X').from(moment());
-  const whenMax = moment(event.maxTime, 'X').from(moment());
+  const when = moment(event.lastEventTime, 'X').from(moment());
   return (
-    <EventCollapsableRow toggleExpand={toggleExpand} expanded={event.expanded}>
+    <EventRow
+      onPress={onPress}
+    >
       <Text style={styles.text}>
-        {spent + ' '}
         {articleAgg
          ? <Ionicons name='ios-globe-outline' size={13} />
          : <CraftIcon name='hcr-comment' size={13} />
         }
-        {' • ' + event.eventCount + ' ' + eventText + ' on ' + onWhat}
+        {' ' + spent + ' spent reading ' + onWhat}
       </Text>
-      {event.tags.length > 0
-       ? <AggStateRow tags={event.tags} />
-       : <Text style={styles.attributes}>
-         {whenMin}
-         {(whenMax !== whenMin) && ' • ' + whenMax}
-       </Text>
-      }
-    </EventCollapsableRow>
+      <Text style={styles.attributes}>
+        {when + ' • ' + event.eventCount + ' ' + eventText}
+      </Text>
+    </EventRow>
   );
 }
 

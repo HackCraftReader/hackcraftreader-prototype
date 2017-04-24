@@ -26,12 +26,11 @@ import relativeDayName from '../utilities/relativeDayName';
 
 import {Tags, FilterTag, FilterNote, TagButton, NoteButton} from '../components/Tags';
 import EventItem from '../components/EventItem';
-import EventAggItem from '../components/EventAggItem';
+import {EventRow, EventAggItem} from '../components/EventAggItem';
 import EventArticleHeader from '../components/EventArticleHeader';
+import {CommentRowContent} from '../components/ArticleComponents';
 
 import {observer, inject} from 'mobx-react/native';
-
-import {loadHNTopArticles} from '../assets/Stories';
 
 import EventStore, {Event} from '../store/EventStore';
 import ArticleStore from '../store/ArticleStore';
@@ -96,7 +95,6 @@ export default class LogScreen extends React.Component {
 
   constructor(props) {
     super(props);
-    loadHNTopArticles(); // Make sure in cache (temp)
     this.ds = new ListView.DataSource({
       rowHasChanged: (r1, r2) => r1 !== r2,
       sectionHeaderHasChanged: (s1, s2) => s1 !== s2
@@ -167,7 +165,6 @@ export default class LogScreen extends React.Component {
   }
 
   _renderSearchOpen = () => {
-    const hasFilters = this.state.tagFilters.length > 0;
     return (
       <View>
         <View style={styles.searchRow}>
@@ -193,7 +190,7 @@ export default class LogScreen extends React.Component {
           <Menu>
             <MenuTrigger>
               <View style={styles.filterToggle}>
-                {hasFilters ? this._renderFilterTags() : this._filterPlaceHolder()}
+                {this._renderFilterTags()}
               </View>
             </MenuTrigger>
             <MenuOptions customStyles={menuContainerStyles}>
@@ -272,6 +269,31 @@ export default class LogScreen extends React.Component {
     );
   }
 
+  _renderTotalTimeSpent = ({totalTimeSpent}) => {
+    const h = Math.floor(totalTimeSpent / 60);
+    const m = Math.floor(totalTimeSpent % 60);
+    return (
+      <View style={styles.timeSpentRow}>
+        <Text style={styles.timeSpentText}>
+          {h}h {m}m
+        </Text>
+        <Text style={styles.timeSpentSubheader}>
+          READING ARTICLES & COMMENTS
+        </Text>
+      </View>
+    );
+  }
+
+  _renderMessage = ({message}) => {
+    return (
+      <View style={styles.timeSpentRow}>
+        <Text style={styles.timeSpentSubheader}>
+          {message}
+        </Text>
+      </View>
+    );
+  }
+
   _isInFilterTime = (timeSpent) => {
     if (!this.state.inSearch || !this.state.filterTime) {
       return true;
@@ -288,7 +310,7 @@ export default class LogScreen extends React.Component {
     return false;
   }
 
-  _isInSearchText = (article, events) => {
+  _isInSearchText = (items) => {
     if (!this.state.inSearch || !this.state.searchText) {
       return true;
     }
@@ -303,22 +325,15 @@ export default class LogScreen extends React.Component {
     let hasAllWords = true;
     words.forEach(word => {
       word = word.toLowerCase();
-      if (article.title.toLowerCase().includes(word)) {
-        return;
-      }
-      if (article.text.toLowerCase().includes(word)) {
-        return;
-      }
-      if (article.note.toLowerCase().includes(word)) {
-        return;
-      }
-      let foundInNote = false;
-      events.forEach((event) => {
-        if (event.data.note && event.data.note.toLowerCase().includes(word)) {
-          foundInNote = true;
+      if (items.some(item => {
+        if (item.text.toLowerCase().includes(word)) {
+          return true;
         }
-      });
-      if (foundInNote) {
+        if (item.note.toLowerCase().includes(word)) {
+          return true;
+        }
+        return false;
+      })) {
         return;
       }
       hasAllWords = false;
@@ -326,18 +341,23 @@ export default class LogScreen extends React.Component {
     return hasAllWords;
   }
 
-  _isInFilterTags = (tags) => {
+  _isInFilterTags = (items) => {
     if (!this.state.inSearch || this.state.tagFilters.length === 0) {
       return true;
     }
-    let found = false;
-    tags.forEach(tag => {
-      const code = tag.type === 'note' ? 'note' : tag.code;
-      if (this.state.tagFilters.includes(code)) {
-        found = true;
+    return items.some(item => {
+      if (item.note && this.state.tagFilters.includes('note')) {
+        return true;
       }
+
+      let found = false;
+      Object.keys(item.tags).forEach(code => {
+        if (this.state.tagFilters.includes(code)) {
+          found = true;
+        }
+      });
+      return found;
     });
-    return found;
   }
 
   _toggleTagFilter = (tag) => {
@@ -391,24 +411,23 @@ export default class LogScreen extends React.Component {
             toggled={this.state.tagFilters.includes(tag.code)}
             key={tag.code}
           />)}
-        <FilterNote
-          toggled={this.state.tagFilters.includes('note')}
-        />
+          <FilterNote
+            toggled={this.state.tagFilters.includes('note')}
+          />
       </View>
     );
   }
 
   _logList() {
     const listData = {};
-
+    if (!this.state.inSearch) {
+      listData['totalTimeSpent'] = [{
+        type: 'totalTimeSpent',
+        totalTimeSpent: EventStore.globalTotalTimeSpent,
+      }];
+    }
     ArticleStore.sorted.forEach(article => {
-      let totalTimeSpent = 0;
-      article.events.forEach(([seqId, storeId]) => {
-        const event = EventStore.bySeqId(seqId);
-        if (event.type === 'time_spent') {
-          totalTimeSpent += event.data.spent;
-        }
-      });
+      let totalTimeSpent = article.timeSpentOnArticle + article.timeSpentOnComments;
       if (!this._isInFilterTime(totalTimeSpent)) {
         return;
       }
@@ -417,30 +436,15 @@ export default class LogScreen extends React.Component {
       const time = moment(article.lastEventTime, 'X');
       const section = relativeDayName(time).toUpperCase();
       const articleItem = ItemStore.lookupItem(article.articleId);
+      const commentItems = article.commentsWithTags
+                                  .map(itemId => ItemStore.lookupItem(itemId))
+                                  .filter(item => item.note || Object.keys(item.tags).length > 0);
 
-      let articleEvents = [];
-      let commentEvents = [];
-      article.events.forEach(([seqId, storeId]) => {
-        const event = EventStore.bySeqId(seqId);
-        if (event.type !== Event.DoneSet && event.type !== Event.DoneClear) {
-          event.articleItem = articleItem;
-          const wasOnComment = event.itemId !== event.articleId || event.data.on === 'comments';
-          if (wasOnComment) {
-            commentEvents.push(event);
-          } else {
-            articleEvents.push(event);
-          }
-        }
-      });
-
-      if (!this._isInSearchText(articleItem, [...articleEvents, ...commentEvents])) {
+      if (!this._isInSearchText([articleItem, ...commentItems])) {
         return;
       }
 
-      const {timeSpent: articleTimeSpent, tags: articleTags} = aggregateEvents(articleEvents);
-      const {timeSpent: commentTimeSpent, tags: commentTags, uniqueComments} = aggregateEvents(commentEvents);
-
-      if (!this._isInFilterTags([...articleTags, ...commentTags])) {
+      if (!this._isInFilterTags([articleItem, ...commentItems])) {
         return;
       }
 
@@ -453,60 +457,66 @@ export default class LogScreen extends React.Component {
         timeSpent: totalTimeSpent
       });
 
-      // TODO: refactor to function or inline func and do for commentEvents as well
-      if (articleEvents.length > 0) {
-        // Add aggregate node
-        const minTime = articleEvents[0].time;
-        const maxTime = articleEvents[articleEvents.length - 1].time;
+      if (article.articleEventCount > 0) {
         const id = 'article_events_' + article.articleId;
-        const expanded = !!this.state.isExpanded[id];
         listData[section].push({
           id,
           type: 'agg_article_events',
           articleItem: articleItem,
-          timeSpent: articleTimeSpent,
-          eventCount: articleEvents.length,
-          tags: articleTags,
-          minTime,
-          maxTime,
-          expanded,
+          timeSpent: article.timeSpentOnArticle,
+          eventCount: article.articleEventCount,
+          lastEventTime: article.articleLastEventTime,
         });
-        if (expanded) {
-          articleEvents.forEach(event => {
-            listData[section].push(event);
-          });
-        }
       }
-      if (commentEvents.length > 0) {
-        // Add aggregate node
-        const minTime = commentEvents[0].time;
-        const maxTime = commentEvents[commentEvents.length - 1].time;
+
+      if (article.commentsEventCount > 0) {
         const id = 'comment_events_' + article.articleId;
-        const expanded = !!this.state.isExpanded[id];
         listData[section].push({
           id,
           type: 'agg_comment_events',
           articleItem: articleItem,
-          timeSpent: commentTimeSpent,
-          eventCount: commentEvents.length,
-          uniqueComments,
-          tags: commentTags,
-          minTime,
-          maxTime,
-          expanded,
+          timeSpent: article.timeSpentOnComments,
+          eventCount: article.commentsEventCount,
+          lastEventTime: article.commentsLastEventTime,
         });
-        if (expanded) {
-          commentEvents.forEach(event => {
-            listData[section].push(event);
-          });
-        }
       }
+
+      commentItems.forEach(commentItem => {
+        const id = 'comment_item_' + commentItem.itemId;
+        listData[section].push({
+          id,
+          type: 'comment_item',
+          articleItem,
+          commentItem,
+        });
+      });
     });
+
+    if (this.state.inSearch && Object.keys(listData).length === 0) {
+      listData['message'] = [{
+        type: 'message',
+        message: 'NO EVENTS MATCHED YOUR QUERY',
+      }];
+    }
+    else if (Object.keys(listData).length > 0) {
+      listData['message'] = [{
+        type: 'message',
+        message: 'END OF FILE',
+      }];
+    }
+
     this.lastListData = listData;
     return this.ds.cloneWithRowsAndSections(listData);
   }
 
   _renderRow = (rowData, sectionId, rowId) => {
+    if (rowData.type === 'totalTimeSpent') {
+      return this._renderTotalTimeSpent(rowData);
+    }
+    if (rowData.type === 'message') {
+      return this._renderMessage(rowData);
+    }
+
     if (rowData.type === 'article_header') {
       const article = rowData.articleItem;
       return (
@@ -523,34 +533,29 @@ export default class LogScreen extends React.Component {
         <EventAggItem
           key={sectionId + rowId}
           event={rowData}
-          toggleExpand={() => this._toggleExpand(rowData.id)}
+          onPress={() => this._openArticleEvents(rowData.articleId)}
         />
       );
     } else {
-      const event = rowData;
-      const article = event.articleItem;
+      const article = rowData.articleItem;
+      const commentId = rowData.commentItem.itemId;
       return (
-        <View key={sectionId + rowId}>
-          <EventItem
-            event={event}
-            openEvent={
-              () => {
-                const wasComment = event.itemId !== event.articleId || event.data.on === 'comments';
-                if (wasComment) {
-                  this._openComments(article, event.itemId);
-                } else {
-                  this._openArticle(article);
-                }
-              }
-            }
-          />
-        </View>
+        <EventRow
+          key={sectionId + rowId}
+          onPress={() => this._openComments(article, commentId)}
+          showOpenArrow
+        >
+          <CommentRowContent comment={rowData.commentItem} showPinned />
+        </EventRow>
       );
     }
   }
 
   _renderSection = (sectionData, sectionId) => {
     const header = sectionId;
+    if (header === 'totalTimeSpent' || header === 'message') {
+      return <View key={sectionId} />;
+    }
 
     return (
       <View key={sectionId} style={styles.sectionContainer}>
@@ -562,6 +567,9 @@ export default class LogScreen extends React.Component {
   }
 
   _renderSeparator = (sectionId, rowId) => {
+    if (sectionId === 'totalTimeSpent' || sectionId === 'message') {
+      return <View key={sectionId + rowId} />;
+    }
     const nextRowData = this.lastListData[sectionId][Number(rowId) + 1];
     const fullSeparator = !nextRowData || nextRowData.type === 'article_header';
     const indented = {
@@ -730,6 +738,27 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontSize: 8,
     color: 'white'
+  },
+
+  // --
+  // Time Spent
+  // --
+  timeSpentRow: {
+    height: 90,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  timeSpentText: {
+    fontSize: 34,
+    color: Colors.primaryTitle,
+  },
+
+  timeSpentSubheader: {
+    fontSize: 11,
+    color: Colors.sectionText,
+    letterSpacing: 1,
   },
 
   // ---

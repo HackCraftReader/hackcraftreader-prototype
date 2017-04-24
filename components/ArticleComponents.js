@@ -62,6 +62,8 @@ export function ItemStateRow({item, showPinned = false}) {
   );
 }
 
+
+// DEAD CODE
 export function AggStateRow({tags}) {
   let extras = [];
   tags.forEach(tag => {
@@ -129,46 +131,46 @@ export function CommentIcon(props) {
 }
 
 function ArticleRowContent({article, upvote}) {
-  if (article.type === 'article') {
-    return (
-      <View style={{flexDirection: 'column'}}>
-        <ArticleTitleAndDomain article={article} />
-        <View style={{flexDirection: 'row'}}>
-          <Text style={styles.attributes}>{article.when} • </Text>
-          <Text style={styles.attributesWithWeight}>{article.points}</Text>
-          <Text style={styles.attributes}> • </Text>
-          <UpVote articleId={article.itemId} upvote={upvote} />
-        </View>
+  return (
+    <View style={{flexDirection: 'column'}}>
+      <ArticleTitleAndDomain article={article} />
+      <View style={{flexDirection: 'row'}}>
+        <Text style={styles.attributes}>{article.when} • </Text>
+        <Text style={styles.attributesWithWeight}>{article.points}</Text>
+        <Text style={styles.attributes}> • </Text>
+        <UpVote articleId={article.itemId} upvote={upvote} />
       </View>
-    );
-  } else { // comment
-    const comment = article;
-    var $ = cheerio.load(comment.text);
-    const commentPlainText = $.root().text();
-    const authorStyle = comment.author === 'hackcrafter'
-                      ? styles.authorMe
-                      : styles.author;
-    const iconName = iconForSource(comment.source);
-    return (
-      <View style={{flexDirection: 'column'}}>
-        <Text numberOfLines={2}>
-          <Text style={authorStyle}>{comment.author}</Text>
-          {' wrote "' + commentPlainText}
+    </View>
+  );
+}
+
+export function CommentRowContent({comment, showPinned}) {
+  var $ = cheerio.load(comment.text);
+  const commentPlainText = $.root().text();
+  const authorStyle = comment.author === 'hackcrafter'
+                    ? styles.authorMe
+                    : styles.author;
+  const iconName = iconForSource(comment.source);
+  return (
+    <View style={{flexDirection: 'column'}}>
+      <Text numberOfLines={2}>
+        <Text style={authorStyle}>{comment.author}</Text>
+        {' wrote "' + commentPlainText}
+      </Text>
+      <ItemStateRow item={comment} showPinned={showPinned} />
+      <View style={{flexDirection: 'row'}}>
+        <Text style={styles.attributes}>
+          <FontAwesome
+            name={iconName}
+            size={16}
+          />
+          {' • ' + comment.when + ' • '
+           + comment.descendantsCount
+           + (comment.descendantsCount === 1 ? ' reply' : ' replies')}
         </Text>
-        <View style={{flexDirection: 'row'}}>
-          <Text style={styles.attributes}>
-            <FontAwesome
-              name={iconName}
-              size={16}
-            />
-            {' • ' + comment.when + ' • '
-             + comment.descendantsCount
-             + (comment.descendantsCount === 1 ? ' reply' : ' replies')}
-          </Text>
-        </View>
       </View>
-    );
-  }
+    </View>
+  );
 }
 
 export function ArticleRow(props) {
@@ -191,7 +193,10 @@ export function ArticleRow(props) {
             }
           </View>
           <View style={styles.center}>
-            <ArticleRowContent article={article} upvote={upvote} />
+            {article.type === 'article'
+             ? <ArticleRowContent article={article} upvote={upvote} />
+             : <CommentRowContent comment={article} />
+            }
           </View>
           <View style={styles.right}>
             {article.type === 'article'

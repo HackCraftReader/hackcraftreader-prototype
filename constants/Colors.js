@@ -37,8 +37,8 @@ export default {
   actionLabel: '#212121',
   actionSubLabel: '#7B7B7B',
 
-  hcrBackground: '#4FD2C2',
-  hcrButtonBackground: '#42AC9F',
+  hcrBackground: '#48B6AC', // '#4FD2C2',
+  hcrButtonBackground: '#009788', // '#42AC9F',
   hcrBackgroundOverlay: 'rgba(0, 124, 109, 0.38)',
 
   // Not sure I like these enough to use them

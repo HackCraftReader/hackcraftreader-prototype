@@ -343,7 +343,7 @@ export default class CommentsScreen extends React.Component {
               name={iconName}
               size={16}
             />
-            {' ' + this.article.text}
+            {' ' + this.article.title}
           </Text>
           <TouchableOpacity
             onPress={_ => this._share()}
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '100',
-    width: 330,
+    width: 320,
   },
   shareIcon: {
     marginLeft: 4,

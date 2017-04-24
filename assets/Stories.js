@@ -6,6 +6,9 @@ import relativeDayName from '../utilities/relativeDayName';
 var StoriesMeta = require('./hackernews/meta.json');
 
 import ItemStore from '../store/ItemStore';
+import EventStore from '../store/EventStore';
+
+import EventHistoryStatic from './EventHistoryStatic';
 
 function countComments(comments) {
   if (!comments.children) { return 0; }
@@ -51,28 +54,41 @@ function cleanHNArticles(rawArticles) {
 
 function loadHNTopArticles() {
   const top = require('./hackernews/topStories.json');
-  return cleanHNArticles(top);
+  const topArticles = cleanHNArticles(top);
+
+  // Now that our ItemStore is loaded up, we can load up
+  // our static history of events on these items as well...
+  EventHistoryStatic.reverse().map(e => {
+    if (e.itemId !== e.articleId) {
+      // Load up the comments into the ItemStore cache
+      const article = ItemStore.lookupItem(e.articleId);
+      loadComments(article);
+    }
+    EventStore.add(e.itemId, e.articleId, e.type, e.data, e.time);
+  });
+  return topArticles;
 }
 
 function loadHNLastWeekArticles() {
   const day0 = require('./hackernews/day-0.json');
   const day1 = require('./hackernews/day-1.json');
-  const day2 = require('./hackernews/day-2.json');
-  const day3 = require('./hackernews/day-3.json');
-  const day4 = require('./hackernews/day-4.json');
-  const day5 = require('./hackernews/day-5.json');
-  const day6 = require('./hackernews/day-6.json');
+//  const day2 = require('./hackernews/day-2.json');
+//  const day3 = require('./hackernews/day-3.json');
+//  const day4 = require('./hackernews/day-4.json');
+//  const day5 = require('./hackernews/day-5.json');
+//  const day6 = require('./hackernews/day-6.json');
 
   const labels = [
     relativeDayName(moment()).toUpperCase(),
     relativeDayName(moment().subtract(1, 'days')).toUpperCase(),
-    relativeDayName(moment().subtract(2, 'days')).toUpperCase(),
-    relativeDayName(moment().subtract(3, 'days')).toUpperCase(),
-    relativeDayName(moment().subtract(4, 'days')).toUpperCase(),
-    relativeDayName(moment().subtract(5, 'days')).toUpperCase(),
-    relativeDayName(moment().subtract(6, 'days')).toUpperCase(),
+//    relativeDayName(moment().subtract(2, 'days')).toUpperCase(),
+//    relativeDayName(moment().subtract(3, 'days')).toUpperCase(),
+//    relativeDayName(moment().subtract(4, 'days')).toUpperCase(),
+//    relativeDayName(moment().subtract(5, 'days')).toUpperCase(),
+//    relativeDayName(moment().subtract(6, 'days')).toUpperCase(),
   ];
-  const allDays = [day0, day1, day2, day3, day4, day5, day6].map(
+  //  const allDays = [day0, day1, day2, day3, day4, day5, day6].map(
+  const allDays = [day0, day1].map(
     day => cleanHNArticles(day)
   );
   const lastWeek = {};

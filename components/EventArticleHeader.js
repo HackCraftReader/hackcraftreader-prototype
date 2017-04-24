@@ -39,7 +39,7 @@ export default function EventArticleHeader({event, article, openArticle, openCom
             <View style={{flexDirection: 'column'}}>
               <ArticleTitleAndDomain
                 article={article}
-                showState={false}
+                showState
               />
               <View style={{flexDirection: 'row'}}>
                 <Text style={styles.attributes}>
