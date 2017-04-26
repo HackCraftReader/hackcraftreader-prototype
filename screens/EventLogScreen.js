@@ -64,11 +64,9 @@ export default class ActionScreen extends React.Component {
   _renderHeader = () => {
     return (
       <View style={styles.header}>
-        <View style={styles.headerTitle}>
           <Text style={styles.articleTitle} numberOfLines={1}>
             {this.state.title}
           </Text>
-        </View>
         <View style={styles.headerBookends}>
           <TouchableOpacity
             onPress={this._close}
@@ -133,12 +131,9 @@ const styles = StyleSheet.create({
   },
   articleTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
-  },
-  headerTitle: {
-    paddingLeft: 30,
+    fontSize: 17,
+    fontWeight: '100',
     width: 300,
-    flexDirection: 'row',
   },
   headerBookends: {
     width: 60,

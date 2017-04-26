@@ -1,25 +1,34 @@
 Next:
-* Have "Snoozed" section of Craft Log
+* no expand/collapse, have comments as first-class sub-items of
+article and their tags etc.
 
+* Have "Snoozed" section of Craft Log
+ * Open Thread | 25 replies, very different... Maybe keep parent
+ history
+ * maybe double tap a comment to open thread on anything...
+
+bugs:
+* craft from article opened comments (back button not going back to
+  comments as well)
+  * yahoo comments / "niftich" formatting of
+  
 Missing small features:
 * handle ask HN (day 7 has one) in comments
 * rank should not be state given to item, rather during article listing...
 * vote turns to unvote (animated) (component)
 * vote on comments
-* ReadList Zero with unicorn icon
-* EOF at end of log
+* ReadList Zero with unicorn / rainbow icon
 
 Missing big features:
-* by day feed 
-* static reddit data (optional)
 * search in articles screen (replace ugly nav based header)
-* mock up replies / comments
+* mock up replies / comments / highlight text to reply
 * Notifications screen
 * Settings Screen
 
+
 Upgrades:
-* clear button support (add when replace dep on react-native-elements 
-* Expo 15
+* search widet clear button support (add when replace dep on react-native-elements 
+* Expo 16
 * FlatList instead of ListView for Comments / Articles (speed, scroll
 to item support)
  -  - https://github.com/facebook/react-native/blob/0.43-stable/Libraries/CustomComponents/Lists/FlatList.js
@@ -30,7 +39,7 @@ to item support)
    with auto-preview in position comment will go.
 
 * Use react-native-modal for craft modal. Have top-level component
-  with ref passed a prop through component tree
+  with ref passed a prop through component tree or use nav system
 
 Comments polish:
  * numbers zero, italics not in-line 

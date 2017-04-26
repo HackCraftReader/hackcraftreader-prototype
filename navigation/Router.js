@@ -6,6 +6,8 @@ import ArticlesScreen from '../screens/ArticlesScreen';
 import CommentsScreen from '../screens/CommentsScreen';
 import BrowserScreen from '../screens/BrowserScreen';
 import LogScreen from '../screens/LogScreen';
+import MoreScreen from '../screens/MoreScreen';
+
 
 import ActionScreen from '../screens/ActionScreen';
 import EventLogScreen from '../screens/EventLogScreen';
@@ -32,7 +34,7 @@ export default createRouter(() => ({
   byday: () => ArticlesScreen,
   log: () => LogScreen,
   notifications: () => LinksScreen,
-  more: () => SettingsScreen,
+  more: () => MoreScreen,
   rootNavigation: () => RootNavigation,
 
   action: () => ActionScreen,

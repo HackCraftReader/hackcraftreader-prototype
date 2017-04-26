@@ -40,6 +40,7 @@ export default function EventArticleHeader({event, article, openArticle, openCom
               <ArticleTitleAndDomain
                 article={article}
                 showState
+                showPinned
               />
               <View style={{flexDirection: 'row'}}>
                 <Text style={styles.attributes}>
