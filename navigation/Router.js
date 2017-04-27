@@ -5,6 +5,7 @@ import {
 import ArticlesScreen from '../screens/ArticlesScreen';
 import CommentsScreen from '../screens/CommentsScreen';
 import BrowserScreen from '../screens/BrowserScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import LogScreen from '../screens/LogScreen';
 import MoreScreen from '../screens/MoreScreen';
 
@@ -33,7 +34,7 @@ export default createRouter(() => ({
   top: () => ArticlesScreen,
   byday: () => ArticlesScreen,
   log: () => LogScreen,
-  notifications: () => LinksScreen,
+  notifications: () => NotificationsScreen,
   more: () => MoreScreen,
   rootNavigation: () => RootNavigation,
 
