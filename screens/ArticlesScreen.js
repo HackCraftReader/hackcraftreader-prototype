@@ -11,6 +11,8 @@ import {
 
 import { Ionicons } from '@exponent/vector-icons';
 
+import { SearchBar } from 'react-native-elements';
+
 import { withNavigation } from '@exponent/ex-navigation';
 
 import { SwipeListView } from 'react-native-swipe-list-view';
@@ -97,9 +99,13 @@ export default class ArticlesScreen extends React.Component {
       ? loadHNTopArticles()
       : loadHNLastWeekArticles();
 
+    this.timeout = null;
+    this.searchBarRef = '';
     this.state = {
       isRefreshing: false,
       basic: true,
+      inSearch: false,
+      searchText: '',
       title,
       showDone,
       articles,
@@ -196,6 +202,49 @@ export default class ArticlesScreen extends React.Component {
       </View>
     );
   }
+
+  _renderSearchOpen = () => {
+    return (
+      <View>
+        <View style={styles.searchRow}>
+          <SearchBar
+            lightTheme
+            clearIcon
+            textInputRef={this.searchBarRef}
+            containerStyle={styles.searchStyle}
+            onChangeText={this._searchChanged}
+            inputStyle={styles.inputStyle}
+            placeholder="Search Articles..."
+          />
+          <TouchableOpacity onPress={this._toggleSearch} width={24}>
+            <Text style={styles.cancelButton}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  _toggleSearch = () => {
+    const inSearch = !this.state.inSearch;
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+    this.setState({
+      inSearch,
+      searchText: ''
+    });
+  };
+
+  _searchChanged = text => {
+    // Debounce the text input by 500ms
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+  };
 
   _renderOptionsMenuButton() {
     return (
@@ -439,13 +488,52 @@ export default class ArticlesScreen extends React.Component {
     return { groupedArticles, sectionHeaderData };
   }
 
+  _searchedArticles(articles) {
+    if (!this.state.inSearch || !this.state.searchText) {
+      return articles;
+    }
+
+    const words = this.state.searchText.match(/\S+/g) || [];
+    if (words.length === 0) {
+      return articles;
+    }
+    const hasEveryWord = article => {
+      return words.every(word => {
+        word = word.toLowerCase();
+        if (article.text.toLowerCase().includes(word)) {
+          return true;
+        }
+        if (article.title.toLowerCase().includes(word)) {
+          return true;
+        }
+        if (article.note.toLowerCase().includes(word)) {
+          return true;
+        }
+        return false;
+      });
+    };
+
+    if (Array.isArray(articles)) {
+      return articles.filter(hasEveryWord);
+    } else {
+      const byday = articles;
+      const filterByDay = {};
+      for (const key in byday) {
+        const filtered = byday[key].filter(hasEveryWord);
+        filterByDay[key] = filtered;
+      }
+      return filterByDay;
+    }
+  }
+
   _articleList() {
     const { articles, showDone, groupCountItems } = this.state;
+    const filtered = this._searchedArticles(articles);
     const groupSize = groupCountItems.filter(item => item.selected)[0].value;
-    if (Array.isArray(articles)) {
+    if (Array.isArray(filtered)) {
       // TOP page, do grouping of articles by groupSize
       const { groupedArticles, sectionHeaderData } = this._groupArticles(
-        articles,
+        filtered,
         showDone,
         groupSize
       );
@@ -455,7 +543,7 @@ export default class ArticlesScreen extends React.Component {
     } else {
       // By day, limit length of each section by groupSize
       const { groupedArticles, sectionHeaderData } = this._byDayArticles(
-        articles,
+        filtered,
         showDone,
         groupSize
       );
@@ -512,6 +600,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.screenBase
   },
+
+  // ---
+  // Header
+  // ---
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -538,6 +630,38 @@ const styles = StyleSheet.create({
     height: 45,
     alignItems: 'flex-end'
   },
+
+  // ---
+  // Search Expanded
+  // ---
+  searchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 4,
+    paddingLeft: 0,
+    paddingRight: 6,
+    height: 45,
+    backgroundColor: Colors.hcrBackground
+  },
+  searchStyle: {
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    width: 300,
+    backgroundColor: 'transparent'
+  },
+  inputStyle: {
+    backgroundColor: 'white',
+    color: '#95989A'
+  },
+  cancelButton: {
+    fontSize: 20,
+    color: 'white'
+  },
+
+  // ---
+  // Row
+  // ---
   rowFront: {
     alignItems: 'center',
     backgroundColor: '#CCC',
