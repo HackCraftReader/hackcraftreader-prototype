@@ -4,7 +4,7 @@ import {
   ListView,
   TouchableHighlight,
   Text,
-  View,
+  View
 } from 'react-native';
 
 import { Ionicons, FontAwesome } from '@exponent/vector-icons';
@@ -14,9 +14,10 @@ import { withNavigation } from '@exponent/ex-navigation';
 import moment from 'moment/src/moment'; // Moment ES6 workaround
 
 import ItemStore from '../store/ItemStore';
+import Router from '../navigation/Router';
 
-import {CommentIcon} from '../components/ArticleComponents.js';
-import {loadComments} from '../assets/Stories';
+import { CommentIcon } from '../components/ArticleComponents.js';
+import { loadComments } from '../assets/Stories';
 import extractDomain from '../utilities/extractDomain';
 import cheerio from 'cheerio-without-node-native';
 
@@ -25,7 +26,7 @@ import Colors from '../constants/Colors';
 const hcrNavigationBarRouteConfig = {
   backgroundColor: Colors.hcrBackground,
   tintColor: 'white',
-  height: 64,
+  height: 64
 };
 
 const EXAMPLE_NOTIFICATIONS = [
@@ -34,6 +35,7 @@ const EXAMPLE_NOTIFICATIONS = [
     type: 'post',
     item: 'hn_a_13186051',
     vote: 3,
+    unread: true,
     time: moment().subtract(4, 'hours')
   },
   {
@@ -41,6 +43,7 @@ const EXAMPLE_NOTIFICATIONS = [
     type: 'comment',
     item: 'hn_c_13186899',
     vote: 5,
+    unread: true,
     time: moment().subtract(6, 'hours')
   },
   {
@@ -48,6 +51,7 @@ const EXAMPLE_NOTIFICATIONS = [
     type: 'comment',
     item: 'hn_c_13186960',
     vote: 2,
+    unread: true,
     time: moment().subtract(9, 'hours')
   },
   {
@@ -55,6 +59,7 @@ const EXAMPLE_NOTIFICATIONS = [
     type: 'comment',
     item: 'hn_c_13186605',
     vote: 8,
+    unread: false,
     time: moment().subtract(26, 'hours')
   },
   {
@@ -62,6 +67,7 @@ const EXAMPLE_NOTIFICATIONS = [
     type: 'comment',
     item: 'hn_c_13186772',
     vote: -1,
+    unread: false,
     time: moment().subtract(28, 'hours')
   },
   {
@@ -69,8 +75,9 @@ const EXAMPLE_NOTIFICATIONS = [
     type: 'comment',
     item: 'hn_c_13187043',
     vote: 4,
+    unread: false,
     time: moment().subtract(29, 'hours')
-  },
+  }
 ];
 
 @withNavigation
@@ -78,24 +85,24 @@ export default class NotificationsScreen extends React.Component {
   static route = {
     navigationBar: {
       ...hcrNavigationBarRouteConfig,
-      title: 'More',
+      title: 'Notifications'
     }
-  }
+  };
 
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({
-      rowHasChanged: (r1, r2) => r1 !== r2,
+      rowHasChanged: (r1, r2) => r1 !== r2
     });
     const data = EXAMPLE_NOTIFICATIONS;
     const listData = this.ds.cloneWithRows(data);
-    this.state = {listData};
+    this.state = { listData };
   }
 
   componentWillMount() {
     const article = ItemStore.lookupItem('hn_a_13186303');
     loadComments(article);
-    console.log('loaded comments...')
+    // console.log('loaded comments...');
   }
 
   render() {
@@ -111,7 +118,7 @@ export default class NotificationsScreen extends React.Component {
   }
 
   _renderRow = (rowData, sectionId, rowId) => {
-    const {vote, type, time, order} = rowData;
+    const { vote, type, time, order, unread } = rowData;
     const item = ItemStore.lookupItem(rowData.item);
     let details = '';
     if (type === 'post') {
@@ -120,11 +127,12 @@ export default class NotificationsScreen extends React.Component {
       var $ = cheerio.load(item.text);
       details = $.root().text();
     }
+    const unreadStyle = {backgroundColor: '#EDF2FA'};
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, unread && unreadStyle]}>
         <TouchableHighlight
           onPress={() => this._open(rowData)}
-          underlayColor='#E8F0FE'
+          underlayColor="#E8F0FE"
         >
           <View style={styles.row}>
             <View style={styles.left}>
@@ -139,22 +147,47 @@ export default class NotificationsScreen extends React.Component {
                 />
                 {' ' + vote} on {type} {time.from(moment())}
               </Text>
-              <Text style={styles.detailsText} numberOfLines={2}>{details}</Text>
+              <Text style={styles.detailsText} numberOfLines={2}>
+                {details}
+              </Text>
             </View>
             <View style={styles.right}>
               <CommentIcon
                 article={item}
-                openComments={() => this._open(rowData)}
+                openComments={() => this._openComment(rowData)}
               />
             </View>
           </View>
         </TouchableHighlight>
       </View>
     );
+  };
+
+  _open(row) {
+    const article = ItemStore.lookupItem(row.item);
+    if (article.type === 'comment') {
+      return this._openComment(row);
+    }
+    const rootNav = this.props.navigation.getNavigator('root');
+    const routeParams = {
+      screen: 'article',
+      itemId: article.articleId,
+      url: article.url,
+      updateCallback: () => row.unread = false,
+    };
+    rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
-  _open(action) {
-    console.log(action.name);
+  _openComment(row) {
+    const article = ItemStore.lookupItem(row.item);
+    const rootNav = this.props.navigation.getNavigator('root');
+    const routeParams = {
+      screen: 'comments',
+      itemId: article.articleId,
+      url: article.url,
+      updateCallback: () => row.unread = false,
+    };
+    rootNav.push(Router.getRoute('articleNavigation', routeParams));
   }
 
   _renderSeparator = (sectionId, rowId) => {
@@ -162,44 +195,43 @@ export default class NotificationsScreen extends React.Component {
       backgroundColor: 'white',
       height: 0.5,
       flexDirection: 'row',
-      flex: 1,
+      flex: 1
     };
     return (
       <View key={sectionId + rowId} style={indented}>
-        <View style={{width: 15}} />
+        <View style={{ width: 15 }} />
         <View style={styles.bottomBorder} />
       </View>
     );
-  }
-
+  };
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: 'white'
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    flex: 1,
+    flex: 1
   },
 
   notificationText: {
     color: Colors.primaryTitle,
-    fontSize: 17,
+    fontSize: 17
   },
 
   left: {
     marginLeft: 15,
     width: 30,
     paddingRight: 5,
-    paddingTop: 8,
+    paddingTop: 8
   },
   center: {
     flex: 1,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 8
   },
   right: {
     width: 45,
@@ -209,15 +241,15 @@ const styles = StyleSheet.create({
   rankText: {
     color: Colors.secondaryTitle,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 16
   },
   detailsText: {
     color: Colors.secondaryTitle,
-    fontSize: 13,
-  },  
+    fontSize: 13
+  },
   bottomBorder: {
     borderBottomColor: Colors.hairlineBorder,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    flex: 1,
+    flex: 1
   }
 });

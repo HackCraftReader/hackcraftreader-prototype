@@ -5,7 +5,7 @@ import {
   ListView,
   Slider,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 import {
@@ -13,7 +13,7 @@ import {
   MenuOptions,
   MenuOption,
   MenuTrigger,
-  MenuContext,
+  MenuContext
 } from 'react-native-popup-menu';
 
 import moment from 'moment/src/moment'; // Moment ES6 workaround
@@ -24,16 +24,22 @@ import Router from '../navigation/Router';
 
 import relativeDayName from '../utilities/relativeDayName';
 
-import {Tags, FilterTag, FilterNote, TagButton, NoteButton} from '../components/Tags';
-import {EventRow, EventAggItem} from '../components/EventAggItem';
+import {
+  Tags,
+  FilterTag,
+  FilterNote,
+  TagButton,
+  NoteButton
+} from '../components/Tags';
+import { EventRow, EventAggItem } from '../components/EventAggItem';
 import EventArticleHeader from '../components/EventArticleHeader';
-import {CommentRowContent} from '../components/ArticleComponents';
+import { CommentRowContent } from '../components/ArticleComponents';
 
 import EventLogScreen from '../screens/EventLogScreen';
 
-import {observer, inject} from 'mobx-react/native';
+import { observer, inject } from 'mobx-react/native';
 
-import EventStore, {Event} from '../store/EventStore';
+import EventStore, { Event } from '../store/EventStore';
 import ArticleStore from '../store/ArticleStore';
 import ItemStore from '../store/ItemStore';
 
@@ -56,25 +62,29 @@ function aggregateEvents(events) {
     if (event.type.startsWith('note_') && !haveSeen['note']) {
       haveSeen['note'] = true;
       if (event.type === 'note_add') {
-        tags.push({type: 'note', note: event.data.note});
+        tags.push({ type: 'note', note: event.data.note });
       }
     }
     if (event.type.startsWith('tag_') && !haveSeen['tag']) {
       haveSeen['tag'] = true;
       if (event.type === 'tag_add') {
-        tags.push({type: 'item', code: event.data.code, label: event.data.label});
+        tags.push({
+          type: 'item',
+          code: event.data.code,
+          label: event.data.label
+        });
       }
     }
     if (event.type.startsWith('snooze_') && !haveSeen['snooze']) {
       haveSeen['snooze'] = true;
       if (event.type === 'snooze_set') {
-        tags.push({type: 'snooze', label: event.data.label});
+        tags.push({ type: 'snooze', label: event.data.label });
       }
     }
     if (event.type.startsWith('pinned_') && !haveSeen['pinned']) {
       haveSeen['pinned'] = true;
       if (event.type === 'pinned_set') {
-        tags.push({type: 'pin'});
+        tags.push({ type: 'pin' });
       }
     }
     const wasOnComment = event.itemId !== event.articleId;
@@ -83,7 +93,7 @@ function aggregateEvents(events) {
     }
   });
   const uniqueComments = Object.keys(commentIds).length;
-  return {timeSpent, tags, uniqueComments};
+  return { timeSpent, tags, uniqueComments };
 }
 
 @inject('ItemStore')
@@ -91,7 +101,7 @@ function aggregateEvents(events) {
 export default class LogScreen extends React.Component {
   static route = {
     navigationBar: {
-      visible: false,
+      visible: false
     }
   };
 
@@ -108,7 +118,7 @@ export default class LogScreen extends React.Component {
       filterTime: 0,
       searchText: '',
       tagFilters: [],
-      isExpanded: {},
+      isExpanded: {}
     };
   }
 
@@ -139,15 +149,15 @@ export default class LogScreen extends React.Component {
     this.setState({
       inSearch,
       filterTime: 0,
-      searchText: '',
+      searchText: ''
     });
-  }
+  };
 
   _renderHeader = () => {
     return (
       <View style={styles.header}>
         <View style={styles.headerBookends} />
-        <Text style={styles.articleTitle}>
+        <Text style={styles.screenTitle}>
           Craft Log
         </Text>
         <View style={styles.headerBookends}>
@@ -155,16 +165,12 @@ export default class LogScreen extends React.Component {
             onPress={this._toggleSearch}
             style={styles.searchContainer}
           >
-            <Ionicons
-              name='ios-search'
-              size={24}
-              color='white'
-            />
+            <Ionicons name="ios-search" size={24} color="white" />
           </TouchableOpacity>
         </View>
       </View>
     );
-  }
+  };
 
   _renderSearchOpen = () => {
     return (
@@ -177,12 +183,9 @@ export default class LogScreen extends React.Component {
             containerStyle={styles.searchStyle}
             onChangeText={this._searchChanged}
             inputStyle={styles.inputStyle}
-            placeholder='Search Log...'
+            placeholder="Search Log..."
           />
-          <TouchableOpacity
-            onPress={this._toggleSearch}
-            width={24}
-          >
+          <TouchableOpacity onPress={this._toggleSearch} width={24}>
             <Text style={styles.cancelButton}>
               Cancel
             </Text>
@@ -197,12 +200,15 @@ export default class LogScreen extends React.Component {
             </MenuTrigger>
             <MenuOptions customStyles={menuContainerStyles}>
               <MenuOption disabled>
-                <Text style={{color: '#212121'}}>
+                <Text style={{ color: '#212121' }}>
                   Filter with Tags:
                 </Text>
               </MenuOption>
-              {TAGS.map(tag =>
-                <MenuOption key={tag.code} onSelect={() => this._toggleTagFilter(tag.code)} >
+              {TAGS.map(tag => (
+                <MenuOption
+                  key={tag.code}
+                  onSelect={() => this._toggleTagFilter(tag.code)}
+                >
                   <View style={styles.centered}>
                     <TagButton
                       color={tag.color}
@@ -211,26 +217,26 @@ export default class LogScreen extends React.Component {
                     />
                   </View>
                 </MenuOption>
-               )}
-              <MenuOption onSelect={() => this._toggleTagFilter('note')} >
+              ))}
+              <MenuOption onSelect={() => this._toggleTagFilter('note')}>
                 <View style={styles.centered}>
                   <NoteButton
                     toggled={this.state.tagFilters.includes('note')}
                   />
                 </View>
               </MenuOption>
-              <MenuOption onSelect={() => this._selectAllFilters()} >
+              <MenuOption onSelect={() => this._selectAllFilters()}>
                 <View style={styles.centered}>
-                  <View style={{padding: 5}}>
+                  <View style={{ padding: 5 }}>
                     <Text style={styles.menuActionText}>
                       Select All Filters
                     </Text>
                   </View>
                 </View>
               </MenuOption>
-              <MenuOption onSelect={() => this._clearTagFilters()} >
+              <MenuOption onSelect={() => this._clearTagFilters()}>
                 <View style={styles.centered}>
-                  <View style={{padding: 5}}>
+                  <View style={{ padding: 5 }}>
                     <Text style={styles.menuActionText}>
                       Clear All Filters
                     </Text>
@@ -240,38 +246,78 @@ export default class LogScreen extends React.Component {
             </MenuOptions>
           </Menu>
           <View>
-            <View style={[styles.sliderTick, {left: 15, backgroundColor: this.state.filterTime >= 0 ? '#3985B8' : 'white'}]} />
-            <View style={[styles.sliderBottom, {left: 8}]}>
+            <View
+              style={[
+                styles.sliderTick,
+                {
+                  left: 15,
+                  backgroundColor: this.state.filterTime >= 0
+                    ? '#3985B8'
+                    : 'white'
+                }
+              ]}
+            />
+            <View style={[styles.sliderBottom, { left: 8 }]}>
               <Text style={styles.sliderLabel}>0 s+</Text>
             </View>
-            <View style={[styles.sliderTick, {left: 55, backgroundColor: this.state.filterTime >= 1 ? '#3985B8' : 'white'}]} />
-            <View style={[styles.sliderBottom, {left: 47}]}>
+            <View
+              style={[
+                styles.sliderTick,
+                {
+                  left: 55,
+                  backgroundColor: this.state.filterTime >= 1
+                    ? '#3985B8'
+                    : 'white'
+                }
+              ]}
+            />
+            <View style={[styles.sliderBottom, { left: 47 }]}>
               <Text style={styles.sliderLabel}>30 s+</Text>
             </View>
-            <View style={[styles.sliderTick, {left: 94, backgroundColor: this.state.filterTime >= 2 ? '#3985B8' : 'white'}]} />
-            <View style={[styles.sliderBottom, {left: 88}]}>
+            <View
+              style={[
+                styles.sliderTick,
+                {
+                  left: 94,
+                  backgroundColor: this.state.filterTime >= 2
+                    ? '#3985B8'
+                    : 'white'
+                }
+              ]}
+            />
+            <View style={[styles.sliderBottom, { left: 88 }]}>
               <Text style={styles.sliderLabel}>1 m+</Text>
             </View>
-            <View style={[styles.sliderTick, {left: 134, backgroundColor: this.state.filterTime >= 3 ? '#3985B8' : 'white'}]} />
-            <View style={[styles.sliderBottom, {left: 127}]}>
+            <View
+              style={[
+                styles.sliderTick,
+                {
+                  left: 134,
+                  backgroundColor: this.state.filterTime >= 3
+                    ? '#3985B8'
+                    : 'white'
+                }
+              ]}
+            />
+            <View style={[styles.sliderBottom, { left: 127 }]}>
               <Text style={styles.sliderLabel}>5 m+</Text>
             </View>
             <Slider
-              style={{width: 150}}
-              minimumTrackTintColor='#3985B8'
-              maximumTrackTintColor='white'
+              style={{ width: 150 }}
+              minimumTrackTintColor="#3985B8"
+              maximumTrackTintColor="white"
               min
               maximumValue={3}
               step={1}
-              onValueChange={(value) => this.setState({filterTime: value})}
+              onValueChange={value => this.setState({ filterTime: value })}
             />
           </View>
         </View>
       </View>
     );
-  }
+  };
 
-  _renderTotalTimeSpent = ({totalTimeSpent}) => {
+  _renderTotalTimeSpent = ({ totalTimeSpent }) => {
     const h = Math.floor(totalTimeSpent / 60);
     const m = Math.floor(totalTimeSpent % 60);
     return (
@@ -284,9 +330,9 @@ export default class LogScreen extends React.Component {
         </Text>
       </View>
     );
-  }
+  };
 
-  _renderMessage = ({message}) => {
+  _renderMessage = ({ message }) => {
     return (
       <View style={styles.timeSpentRow}>
         <Text style={styles.timeSpentSubheader}>
@@ -294,9 +340,9 @@ export default class LogScreen extends React.Component {
         </Text>
       </View>
     );
-  }
+  };
 
-  _isInFilterTime = (timeSpent) => {
+  _isInFilterTime = timeSpent => {
     if (!this.state.inSearch || !this.state.filterTime) {
       return true;
     }
@@ -310,9 +356,9 @@ export default class LogScreen extends React.Component {
       return timeSpent >= 30;
     }
     return false;
-  }
+  };
 
-  _isInSearchText = (items) => {
+  _isInSearchText = items => {
     if (!this.state.inSearch || !this.state.searchText) {
       return true;
     }
@@ -327,23 +373,25 @@ export default class LogScreen extends React.Component {
     let hasAllWords = true;
     words.forEach(word => {
       word = word.toLowerCase();
-      if (items.some(item => {
-        if (item.text.toLowerCase().includes(word)) {
-          return true;
-        }
-        if (item.note.toLowerCase().includes(word)) {
-          return true;
-        }
-        return false;
-      })) {
+      if (
+        items.some(item => {
+          if (item.text.toLowerCase().includes(word)) {
+            return true;
+          }
+          if (item.note.toLowerCase().includes(word)) {
+            return true;
+          }
+          return false;
+        })
+      ) {
         return;
       }
       hasAllWords = false;
     });
     return hasAllWords;
-  }
+  };
 
-  _isInFilterTags = (items) => {
+  _isInFilterTags = items => {
     if (!this.state.inSearch || this.state.tagFilters.length === 0) {
       return true;
     }
@@ -360,9 +408,9 @@ export default class LogScreen extends React.Component {
       });
       return found;
     });
-  }
+  };
 
-  _toggleTagFilter = (tag) => {
+  _toggleTagFilter = tag => {
     if (this.state.tagFilters.includes(tag)) {
       this.setState({
         tagFilters: this.state.tagFilters.filter(t => t !== tag)
@@ -372,28 +420,28 @@ export default class LogScreen extends React.Component {
         tagFilters: [...this.state.tagFilters, tag]
       });
     }
-  }
+  };
 
   _selectAllFilters = () => {
     const tags = TAGS.map(t => t.code);
     this.setState({
       tagFilters: [...tags, 'note']
     });
-  }
+  };
 
   _clearTagFilters = () => {
     this.setState({
       tagFilters: []
     });
-  }
+  };
 
-  _searchChanged = (text) => {
+  _searchChanged = text => {
     // Debounce the text input by 500ms
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
-    this.timeout = setTimeout(() => this.setState({searchText: text}), 1000);
-  }
+    this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+  };
 
   _filterPlaceHolder() {
     return (
@@ -407,15 +455,14 @@ export default class LogScreen extends React.Component {
     const tags = [Tags.TagPurple, Tags.TagOrange, Tags.TagRed, Tags.TagGreen];
     return (
       <View style={styles.filterList}>
-        {tags.map(tag =>
+        {tags.map(tag => (
           <FilterTag
             tag={tag}
             toggled={this.state.tagFilters.includes(tag.code)}
             key={tag.code}
-          />)}
-          <FilterNote
-            toggled={this.state.tagFilters.includes('note')}
           />
+        ))}
+        <FilterNote toggled={this.state.tagFilters.includes('note')} />
       </View>
     );
   }
@@ -423,13 +470,16 @@ export default class LogScreen extends React.Component {
   _logList() {
     const listData = {};
     if (!this.state.inSearch) {
-      listData['totalTimeSpent'] = [{
-        type: 'totalTimeSpent',
-        totalTimeSpent: EventStore.globalTotalTimeSpent,
-      }];
+      listData['totalTimeSpent'] = [
+        {
+          type: 'totalTimeSpent',
+          totalTimeSpent: EventStore.globalTotalTimeSpent
+        }
+      ];
     }
     ArticleStore.sorted.forEach(article => {
-      let totalTimeSpent = article.timeSpentOnArticle + article.timeSpentOnComments;
+      let totalTimeSpent =
+        article.timeSpentOnArticle + article.timeSpentOnComments;
       if (!this._isInFilterTime(totalTimeSpent)) {
         return;
       }
@@ -439,8 +489,8 @@ export default class LogScreen extends React.Component {
       const section = relativeDayName(time).toUpperCase();
       const articleItem = ItemStore.lookupItem(article.articleId);
       const commentItems = article.commentsWithTags
-                                  .map(itemId => ItemStore.lookupItem(itemId))
-                                  .filter(item => item.note || Object.keys(item.tags).length > 0);
+        .map(itemId => ItemStore.lookupItem(itemId))
+        .filter(item => item.note || Object.keys(item.tags).length > 0);
 
       if (!this._isInSearchText([articleItem, ...commentItems])) {
         return;
@@ -468,7 +518,7 @@ export default class LogScreen extends React.Component {
           articleCache: article,
           timeSpent: article.timeSpentOnArticle,
           eventCount: article.articleEventCount,
-          lastEventTime: article.articleLastEventTime,
+          lastEventTime: article.articleLastEventTime
         });
       }
 
@@ -481,7 +531,7 @@ export default class LogScreen extends React.Component {
           articleCache: article,
           timeSpent: article.timeSpentOnComments,
           eventCount: article.commentsEventCount,
-          lastEventTime: article.commentsLastEventTime,
+          lastEventTime: article.commentsLastEventTime
         });
       }
 
@@ -491,22 +541,25 @@ export default class LogScreen extends React.Component {
           id,
           type: 'comment_item',
           articleItem,
-          commentItem,
+          commentItem
         });
       });
     });
 
     if (this.state.inSearch && Object.keys(listData).length === 0) {
-      listData['message'] = [{
-        type: 'message',
-        message: 'NO EVENTS MATCHED YOUR QUERY',
-      }];
-    }
-    else if (Object.keys(listData).length > 0) {
-      listData['message'] = [{
-        type: 'message',
-        message: 'END OF FILE',
-      }];
+      listData['message'] = [
+        {
+          type: 'message',
+          message: 'NO EVENTS MATCHED YOUR QUERY'
+        }
+      ];
+    } else if (Object.keys(listData).length > 0) {
+      listData['message'] = [
+        {
+          type: 'message',
+          message: 'END OF FILE'
+        }
+      ];
     }
 
     this.lastListData = listData;
@@ -537,7 +590,8 @@ export default class LogScreen extends React.Component {
         <EventAggItem
           key={sectionId + rowId}
           event={rowData}
-          onPress={() => this._openArticleEvents(rowData.articleItem, rowData.articleCache)}
+          onPress={() =>
+            this._openArticleEvents(rowData.articleItem, rowData.articleCache)}
         />
       );
     } else {
@@ -553,7 +607,7 @@ export default class LogScreen extends React.Component {
         </EventRow>
       );
     }
-  }
+  };
 
   _renderSection = (sectionData, sectionId) => {
     const header = sectionId;
@@ -568,7 +622,7 @@ export default class LogScreen extends React.Component {
         </Text>
       </View>
     );
-  }
+  };
 
   _renderSeparator = (sectionId, rowId) => {
     if (sectionId === 'totalTimeSpent' || sectionId === 'message') {
@@ -580,17 +634,17 @@ export default class LogScreen extends React.Component {
       backgroundColor: 'white',
       height: 0.5,
       flexDirection: 'row',
-      flex: 1,
+      flex: 1
     };
     return (
       <View key={sectionId + rowId} style={indented}>
-        {!fullSeparator && <View style={{width: 30}} />}
+        {!fullSeparator && <View style={{ width: 30 }} />}
         <View style={styles.bottomBorder} />
       </View>
     );
-  }
+  };
 
-  _toggleExpand = (expandId) => {
+  _toggleExpand = expandId => {
     const expanded = !!this.state.isExpanded[expandId];
 
     this.setState({
@@ -599,42 +653,42 @@ export default class LogScreen extends React.Component {
         [expandId]: !expanded
       }
     });
-  }
+  };
 
   _updateLog = () => {
     this.setState({});
-  }
+  };
 
-  _openArticle = (article) => {
+  _openArticle = article => {
     const rootNav = this.props.navigation.getNavigator('root');
     const routeParams = {
-      'screen': 'article',
+      screen: 'article',
       itemId: article.articleId,
       url: article.url,
       updateCallback: this._updateLog
     };
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
-  }
+  };
 
   _openComments = (article, commentId) => {
     const rootNav = this.props.navigation.getNavigator('root');
     const routeParams = {
-      'screen': 'comments',
+      screen: 'comments',
       itemId: article.articleId,
       url: article.url,
       updateCallback: this._updateLog
     };
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
-  }
+  };
 
   _openArticleEvents = (article, articleCache) => {
     const rootNav = this.props.navigation.getNavigator('root');
     const actionParams = {
       title: article.title,
-      articleCache,
+      articleCache
     };
     rootNav.push(Router.getRoute('eventlog', actionParams));
-  }
+  };
 }
 
 const menuContainerStyles = {
@@ -643,14 +697,14 @@ const menuContainerStyles = {
     marginRight: 5
   },
   optionText: {
-    color: '#007AFF',
-  },
+    color: '#007AFF'
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.screenBase,
+    backgroundColor: Colors.screenBase
   },
   header: {
     flexDirection: 'row',
@@ -659,7 +713,7 @@ const styles = StyleSheet.create({
     padding: 9,
     paddingRight: 10,
     height: 64,
-    backgroundColor: Colors.hcrBackground,
+    backgroundColor: Colors.hcrBackground
   },
   // ---
   // Expanded Search
@@ -672,13 +726,13 @@ const styles = StyleSheet.create({
     paddingLeft: 0,
     paddingRight: 6,
     height: 45,
-    backgroundColor: Colors.hcrBackground,
+    backgroundColor: Colors.hcrBackground
   },
   searchStyle: {
     borderTopWidth: 0,
     borderBottomWidth: 0,
     width: 300,
-    backgroundColor: 'transparent',
+    backgroundColor: 'transparent'
   },
   inputStyle: {
     backgroundColor: 'white',
@@ -686,21 +740,21 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     fontSize: 20,
-    color: 'white',
+    color: 'white'
   },
-  articleTitle: {
+  screenTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 20
   },
   headerBookends: {
     width: 30,
-    flexDirection: 'row',
+    flexDirection: 'row'
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   filterToggle: {
     marginLeft: 8,
@@ -709,19 +763,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'white',
     width: 191,
-    height: 30,
+    height: 30
   },
   filterList: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   filterPlaceholder: {
     flexDirection: 'row',
     paddingLeft: 10,
     paddingTop: 2,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   filterText: {
     fontSize: 16,
@@ -730,7 +784,7 @@ const styles = StyleSheet.create({
   centered: {
     flexDirection: 'row',
     justifyContent: 'center',
-    flex: 1,
+    flex: 1
   },
   menuActionText: {
     flex: 1,
@@ -742,11 +796,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 13,
     width: 1,
-    height: 7,
+    height: 7
   },
   sliderBottom: {
     position: 'absolute',
-    top: 30,
+    top: 30
   },
   sliderLabel: {
     fontSize: 8,
@@ -760,18 +814,18 @@ const styles = StyleSheet.create({
     height: 90,
     flexDirection: 'column',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
 
   timeSpentText: {
     fontSize: 34,
-    color: Colors.primaryTitle,
+    color: Colors.primaryTitle
   },
 
   timeSpentSubheader: {
     fontSize: 11,
     color: Colors.sectionText,
-    letterSpacing: 1,
+    letterSpacing: 1
   },
 
   // ---
@@ -790,12 +844,12 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.sectionBorder,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.sectionBorder,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: StyleSheet.hairlineWidth
   },
   sectionText: {
     fontSize: 16,
     color: Colors.sectionText,
-    letterSpacing: 2,
+    letterSpacing: 2
   },
 
   // ---
@@ -804,6 +858,6 @@ const styles = StyleSheet.create({
   bottomBorder: {
     borderBottomColor: Colors.hairlineBorder,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    flex: 1,
-  },
+    flex: 1
+  }
 });
