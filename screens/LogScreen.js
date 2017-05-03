@@ -43,7 +43,7 @@ import EventStore, { Event } from '../store/EventStore';
 import ArticleStore from '../store/ArticleStore';
 import ItemStore from '../store/ItemStore';
 
-import { SearchBar } from 'react-native-elements';
+import SearchBar from '../components/SearchBar';
 
 import { Ionicons } from '@exponent/vector-icons';
 
@@ -177,12 +177,8 @@ export default class LogScreen extends React.Component {
       <View>
         <View style={styles.searchRow}>
           <SearchBar
-            lightTheme
-            clearIcon
             textInputRef={this.searchBarRef}
-            containerStyle={styles.searchStyle}
             onChangeText={this._searchChanged}
-            inputStyle={styles.inputStyle}
             placeholder="Search Log..."
           />
           <TouchableOpacity onPress={this._toggleSearch} width={24}>
@@ -440,7 +436,11 @@ export default class LogScreen extends React.Component {
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
-    this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+    if (text === '') {
+      this.setState({ searchText: text });
+    } else {
+      this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+    }
   };
 
   _filterPlaceHolder() {
@@ -727,16 +727,6 @@ const styles = StyleSheet.create({
     paddingRight: 6,
     height: 45,
     backgroundColor: Colors.hcrBackground
-  },
-  searchStyle: {
-    borderTopWidth: 0,
-    borderBottomWidth: 0,
-    width: 300,
-    backgroundColor: 'transparent'
-  },
-  inputStyle: {
-    backgroundColor: 'white',
-    color: '#95989A'
   },
   cancelButton: {
     fontSize: 20,

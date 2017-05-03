@@ -20,6 +20,8 @@ export default {
   mostlyWhite: '#F1F1F1',
   disabledItem: '#CAC4C9',
 
+  lightGray: '#86939e',
+
   screenBase: '#F2F2F2',
   sectionText: '#808080',
 

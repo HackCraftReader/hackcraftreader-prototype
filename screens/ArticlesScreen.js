@@ -11,7 +11,7 @@ import {
 
 import { Ionicons } from '@exponent/vector-icons';
 
-import { SearchBar } from 'react-native-elements';
+import SearchBar from '../components/SearchBar';
 
 import { withNavigation } from '@exponent/ex-navigation';
 
@@ -208,12 +208,8 @@ export default class ArticlesScreen extends React.Component {
       <View>
         <View style={styles.searchRow}>
           <SearchBar
-            lightTheme
-            clearIcon
             textInputRef={this.searchBarRef}
-            containerStyle={styles.searchStyle}
             onChangeText={this._searchChanged}
-            inputStyle={styles.inputStyle}
             placeholder="Search Articles..."
           />
           <TouchableOpacity onPress={this._toggleSearch} width={24}>
@@ -243,7 +239,11 @@ export default class ArticlesScreen extends React.Component {
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
-    this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+    if (text === '') {
+      this.setState({ searchText: text });
+    } else {
+      this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+    }
   };
 
   _renderOptionsMenuButton() {
@@ -643,16 +643,6 @@ const styles = StyleSheet.create({
     paddingRight: 6,
     height: 45,
     backgroundColor: Colors.hcrBackground
-  },
-  searchStyle: {
-    borderTopWidth: 0,
-    borderBottomWidth: 0,
-    width: 300,
-    backgroundColor: 'transparent'
-  },
-  inputStyle: {
-    backgroundColor: 'white',
-    color: '#95989A'
   },
   cancelButton: {
     fontSize: 20,
