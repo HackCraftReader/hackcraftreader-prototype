@@ -15,6 +15,8 @@ import SearchBar from '../components/SearchBar';
 
 import { withNavigation } from '@exponent/ex-navigation';
 
+import { Entypo } from '@exponent/vector-icons';
+
 import { SwipeListView } from 'react-native-swipe-list-view';
 
 import MaterialSwitch from 'react-native-material-switch';
@@ -156,6 +158,7 @@ export default class ArticlesScreen extends React.Component {
           {this._renderHeader()}
           {this.state.inSearch && this._renderSearchOpen()}
           <SwipeListView
+            recalculateHiddenLayout
             style={styles.container}
             contentContainerStyle={this.props.route.getContentContainerStyle()}
             dataSource={dataSource}
@@ -242,7 +245,10 @@ export default class ArticlesScreen extends React.Component {
     if (text === '') {
       this.setState({ searchText: text });
     } else {
-      this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+      this.timeout = setTimeout(
+        () => this.setState({ searchText: text }),
+        1000
+      );
     }
   };
 
@@ -303,6 +309,9 @@ export default class ArticlesScreen extends React.Component {
   }
 
   _renderRow = data => {
+    if (data.type === 'message') {
+      return this._renderMessage(data);
+    }
     return (
       <ArticleRow
         article={data}
@@ -314,11 +323,17 @@ export default class ArticlesScreen extends React.Component {
   };
 
   _renderSection = (sectionData, sectionId) => {
+    if (sectionId === 'message') {
+      return <View key={sectionId} />;
+    }
     const headerData = this.sectionHeaderData[sectionId];
     return <ArticleSection section={headerData} checkAll={this._checkAll} />;
   };
 
   _renderSeparator = (sectionId, rowId) => {
+    if (sectionId === 'message') {
+      return <View key={sectionId} />;
+    }
     const nextRowData = this.lastGroupedArticles[sectionId][Number(rowId) + 1];
     const fullSeparator = !nextRowData;
     const indented = {
@@ -331,6 +346,18 @@ export default class ArticlesScreen extends React.Component {
       <View key={sectionId + rowId} style={indented}>
         {!fullSeparator && <View style={{ width: 15 }} />}
         <View style={styles.bottomBorder} />
+      </View>
+    );
+  };
+
+  _renderMessage = ({ message, iconName }) => {
+    return (
+      <View style={styles.messageRow}>
+        {iconName &&
+          <Entypo name={iconName} style={styles.messageIcon} size={34} />}
+        <Text style={styles.messageSubheader}>
+          {message}
+        </Text>
       </View>
     );
   };
@@ -415,6 +442,25 @@ export default class ArticlesScreen extends React.Component {
     rootNav.push(Router.getRoute('articleNavigation', routeParams));
   };
 
+  _messageForEmptyList(groupedArticles, sectionHeaderData) {
+    if (this.state.inSearch && Object.keys(groupedArticles).length === 0) {
+      groupedArticles['message'] = [
+        {
+          type: 'message',
+          message: 'NO ARTICLES MATCHED YOUR QUERY'
+        }
+      ];
+    } else if (Object.keys(groupedArticles).length === 0) {
+      groupedArticles['message'] = [
+        {
+          type: 'message',
+          message: 'NEWSFEED ZERO',
+          iconName: 'rainbow'
+        }
+      ];
+    }
+  }
+
   _groupArticles(articles, showDone, groupSize) {
     let title = 'TOP';
     let curGroup = null;
@@ -459,6 +505,7 @@ export default class ArticlesScreen extends React.Component {
       groupedArticles[curGroup.title] = items;
       sectionHeaderData[curGroup.title] = curGroup;
     }
+    this._messageForEmptyList(groupedArticles, sectionHeaderData);
     return { groupedArticles, sectionHeaderData };
   }
 
@@ -485,6 +532,7 @@ export default class ArticlesScreen extends React.Component {
         sectionHeaderData[curGroup.title] = curGroup;
       }
     }
+    this._messageForEmptyList(groupedArticles, sectionHeaderData);
     return { groupedArticles, sectionHeaderData };
   }
 
@@ -684,17 +732,26 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.hairlineBorder,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flex: 1
-  }
-});
-
-const buttonStyles = StyleSheet.create({
-  buttonContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
   },
-  button: {
-    margin: 16
+
+  // --
+  // Messsage
+  // --
+  messageRow: {
+    height: 90,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.screenBase
+  },
+
+  messageSubheader: {
+    fontSize: 11,
+    color: Colors.sectionText,
+    letterSpacing: 1
+  },
+
+  messageIcon: {
+    color: Colors.sectionText
   }
 });
