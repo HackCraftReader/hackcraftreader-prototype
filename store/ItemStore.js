@@ -133,7 +133,7 @@ class Item {
 
   @computed get activeSnoozed() {
     const now = new Date();
-    return this.snoozed.filter(s => s.date > now);
+    return this.snoozed.filter(s => new Date(s.date) > now);
   }
 
   isSnoozed(label) {
@@ -156,6 +156,7 @@ class Item {
     if (this.isSnoozed(label)) return;
     const date = Snooze.snoozeDate(label);
     const snooze = {date, label, ...context};
+    console.log(snooze);
     this.newEvent(Event.SnoozeSet, snooze);
   }
 

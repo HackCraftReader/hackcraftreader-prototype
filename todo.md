@@ -2,10 +2,7 @@ Next:
 * no expand/collapse, have comments as first-class sub-items of
 article and their tags etc.
 
-* Have "Snoozed" section of Craft Log
- * Open Thread | 25 replies, very different... Maybe keep parent
- history
- * maybe double tap a comment to open thread on anything...
+ * Keep Parent Hiearchy in Nested Comments
 
 bugs:
 * craft from article opened comments (back button not going back to
@@ -17,17 +14,21 @@ Missing small features:
 * rank should not be state given to item, rather during article listing...
 * vote turns to unvote (animated) (component)
 * vote on comments
-* ReadList Zero with unicorn / rainbow icon
 
 Missing big features:
-* search in articles screen (replace ugly nav based header)
 * mock up replies / comments / highlight text to reply
-* Notifications screen
-* Settings Screen
+* maybe double tap a comment to open thread on anything...
 
+Require Native Plugins
+* new interactable MS
+* rowsne Code Push
+* Push notifications from amazon SNS
+* google analytics tracking
+* some purchasing native library
+* reader mode (may need native browser)
+* backend store based on RealmDB (interact with redux)
 
 Upgrades:
-* search widet clear button support (add when replace dep on react-native-elements 
 * Expo 16
 * FlatList instead of ListView for Comments / Articles (speed, scroll
 to item support)

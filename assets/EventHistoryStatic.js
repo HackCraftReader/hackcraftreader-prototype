@@ -99,7 +99,7 @@ export default [
     type: 'snooze_set',
     time: moment().subtract(1.5, 'days').unix(),
     data: {
-      date: "2017-04-22T13:30:00.000Z",
+      date: "2017-05-10T13:30:00.000Z",
       label: 'Weekend',
       author: 'swat17',
       descendantsCount: 1,

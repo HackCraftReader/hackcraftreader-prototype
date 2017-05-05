@@ -36,7 +36,7 @@ function EventRow(props) {
   return (
     <View style={styles.eventContainer}>
       <TouchableHighlight
-        onPress={() => openEvent(event)}
+//        onPress={() => openEvent(event)}
         underlayColor='#E8F0FE'
       >
         <View style={styles.eventItem}>

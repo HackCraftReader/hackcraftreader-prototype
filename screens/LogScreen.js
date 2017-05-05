@@ -35,13 +35,12 @@ import { EventRow, EventAggItem } from '../components/EventAggItem';
 import EventArticleHeader from '../components/EventArticleHeader';
 import { CommentRowContent } from '../components/ArticleComponents';
 
-import EventLogScreen from '../screens/EventLogScreen';
-
 import { observer, inject } from 'mobx-react/native';
 
-import EventStore, { Event } from '../store/EventStore';
+import EventStore from '../store/EventStore';
 import ArticleStore from '../store/ArticleStore';
 import ItemStore from '../store/ItemStore';
+import SnoozedStore from '../store/SnoozedStore';
 
 import SearchBar from '../components/SearchBar';
 
@@ -371,6 +370,9 @@ export default class LogScreen extends React.Component {
       word = word.toLowerCase();
       if (
         items.some(item => {
+          if (item.title.toLowerCase().includes(word)) {
+            return true;
+          }
           if (item.text.toLowerCase().includes(word)) {
             return true;
           }
@@ -439,7 +441,10 @@ export default class LogScreen extends React.Component {
     if (text === '') {
       this.setState({ searchText: text });
     } else {
-      this.timeout = setTimeout(() => this.setState({ searchText: text }), 1000);
+      this.timeout = setTimeout(
+        () => this.setState({ searchText: text }),
+        1000
+      );
     }
   };
 
@@ -477,6 +482,43 @@ export default class LogScreen extends React.Component {
         }
       ];
     }
+
+    // SnoozedStore.removeExpiredSnoozed();
+    SnoozedStore.snoozedArticles.forEach(articleItem => {
+      // Maybe look up in ArticleStore vs ItemStore
+      if (this.state.inSearch && (
+        this.state.filterTime ||
+        this.state.searchText ||
+        this.state.tagFilters.length > 0)) {
+        // Filter out if searching by time
+        return;
+      }
+      const article = ArticleStore.articles.get(articleItem.articleId);
+      const section = 'SNOOZED';
+      const commentItems = article.commentsWithTags
+        .map(itemId => ItemStore.lookupItem(itemId))
+        .filter(item => item.snoozed.length > 0);
+
+      if (!(section in listData)) {
+        listData[section] = [];
+      }
+      listData[section].push({
+        type: 'article_header',
+        articleItem: articleItem,
+        timeSpent: 0,
+        snoozed: true
+      });
+      commentItems.forEach(commentItem => {
+        const id = 'comment_item_' + commentItem.itemId;
+        listData[section].push({
+          id,
+          type: 'comment_item',
+          articleItem,
+          commentItem
+        });
+      });
+    });
+
     ArticleStore.sorted.forEach(article => {
       let totalTimeSpent =
         article.timeSpentOnArticle + article.timeSpentOnComments;
@@ -583,6 +625,7 @@ export default class LogScreen extends React.Component {
           article={article}
           openArticle={() => this._openArticle(article)}
           openComments={() => this._openComments(article)}
+          snoozed={rowData.snoozed}
         />
       );
     } else if (rowData.type.startsWith('agg_')) {
