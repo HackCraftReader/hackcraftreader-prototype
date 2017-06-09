@@ -1,7 +1,4 @@
 Next:
-* no expand/collapse, have comments as first-class sub-items of
-article and their tags etc.
-
  * Keep Parent Hiearchy in Nested Comments
 
 bugs:
